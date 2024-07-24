@@ -550,8 +550,8 @@ function Phi(model::PhenomD,
     aeff = _finalspin(model, eta, chi1, chi2)
     Erad = _radiatednrg(model, eta, chi1, chi2)
     # Compute ringdown and damping frequencies from interpolators
-    fring = LinearInterpolation(QNMgrid_a, QNMgrid_fring)(aeff) / (1.0 - Erad)
-    fdamp = LinearInterpolation(QNMgrid_a, QNMgrid_fdamp)(aeff) / (1.0 - Erad)
+    fring = linear_interpolation(QNMgrid_a, QNMgrid_fring)(aeff) / (1.0 - Erad)
+    fdamp = linear_interpolation(QNMgrid_a, QNMgrid_fdamp)(aeff) / (1.0 - Erad)
 
     # Compute sigma coefficients appearing in arXiv:1508.07253 eq. (28)
     # They derive from a fit, whose numerical coefficients are in arXiv:1508.07253 Tab. 5
@@ -1124,8 +1124,8 @@ function Ampl(model::PhenomD,
     aeff = _finalspin(model, eta, chi1, chi2)
     Erad = _radiatednrg(model, eta, chi1, chi2)
     # Compute ringdown and damping frequencies from interpolators
-    fring = LinearInterpolation(QNMgrid_a, QNMgrid_fring)(aeff) / (1.0 - Erad)
-    fdamp = LinearInterpolation(QNMgrid_a, QNMgrid_fdamp)(aeff) / (1.0 - Erad)
+    fring = linear_interpolation(QNMgrid_a, QNMgrid_fring)(aeff) / (1.0 - Erad)
+    fdamp = linear_interpolation(QNMgrid_a, QNMgrid_fdamp)(aeff) / (1.0 - Erad)
     # Compute coefficients gamma appearing in arXiv:1508.07253 eq. (19), the numerical coefficients are in Tab. 5
     xi2 = xi * xi
     gamma1 =
@@ -1952,8 +1952,8 @@ function Phi(model::PhenomD_NRTidal,
     aeff = _finalspin(model, eta, chi1, chi2)
     Erad = _radiatednrg(model, eta, chi1, chi2)
     # Compute ringdown and damping frequencies from interpolators
-    fring = LinearInterpolation(QNMgrid_a, QNMgrid_fring)(aeff) / (1.0 - Erad)
-    fdamp = LinearInterpolation(QNMgrid_a, QNMgrid_fdamp)(aeff) / (1.0 - Erad)
+    fring = linear_interpolation(QNMgrid_a, QNMgrid_fring)(aeff) / (1.0 - Erad)
+    fdamp = linear_interpolation(QNMgrid_a, QNMgrid_fdamp)(aeff) / (1.0 - Erad)
 
     # Compute sigma coefficients appearing in arXiv:1508.07253 eq. (28)
     # They derive from a fit, whose numerical coefficients are in arXiv:1508.07253 Tab. 5
@@ -5852,8 +5852,8 @@ function Phi(model::PhenomNSBH,
 
     Erad = _radiatednrg(model, eta, chi1, chi2)
     # Compute ringdown and damping frequencies from interpolators
-    fring = LinearInterpolation(QNMgrid_a, QNMgrid_fring)(real(chif)) / (1.0 - Erad)
-    fdamp = LinearInterpolation(QNMgrid_a, QNMgrid_fdamp)(real(chif)) / (1.0 - Erad)
+    fring = linear_interpolation(QNMgrid_a, QNMgrid_fring)(real(chif)) / (1.0 - Erad)
+    fdamp = linear_interpolation(QNMgrid_a, QNMgrid_fdamp)(real(chif)) / (1.0 - Erad)
 
     # Compute sigma coefficients appearing in arXiv:1508.07253 eq. (28)
     # They derive from a fit, whose numerical coefficients are in arXiv:1508.07253 Tab. 5

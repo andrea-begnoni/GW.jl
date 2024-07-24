@@ -943,7 +943,7 @@ function SNR(model::Model,
 
     fgrid = 10 .^ (range(log10(fmin), log10(fcut), length = res))
     # Out of the provided PSD range, we use a constant value of 1, which results in completely negligible contributions
-    psdGrid = LinearInterpolation(detector.fNoise, detector.psd, extrapolation_bc = 1.0)(fgrid)
+    psdGrid = linear_interpolation(detector.fNoise, detector.psd, extrapolation_bc = 1.0)(fgrid)
     detectorCoordinates = DetectorCoordinates(
         detector.latitude_rad,
         detector.longitude_rad,
@@ -1488,7 +1488,7 @@ function FisherMatrix_internal(model::Model,
 
 
     fgrid = 10 .^ (range(log10(fmin), log10(fcut), length = res))
-    psdGrid = LinearInterpolation(detector.fNoise, detector.psd, extrapolation_bc = 1.0)(fgrid)  
+    psdGrid = linear_interpolation(detector.fNoise, detector.psd, extrapolation_bc = 1.0)(fgrid)  
     
     # compute SNR and procede only if it is above the threshold
     if rho_thres !==nothing
