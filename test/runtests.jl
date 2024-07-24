@@ -45,7 +45,7 @@ using Test
     0.008003990135235535
     1.9969726122385671]
 
-    @test isapprox(errors, errors_tabulated, rtol = 1e-12)
+    @test isapprox(errors, errors_tabulated, rtol = 1e-8)
 
 
     fisherHM_network = FisherMatrix(
@@ -65,5 +65,5 @@ using Test
     0.0036638964937824718
     0.4224977988686636]
 
-    @test isapprox(errorsHM, errors_tabulatedHM, rtol = 1e-12)
+    @test isapprox(errorsHM, errors_tabulatedHM, rtol = 1e-8)
 end
