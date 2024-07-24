@@ -23,10 +23,10 @@ using Test
     ET = ETS
     network = [CE_1, CE_2, ET];
     snrD_network = SNR(PhenomD(), mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal,  network) 
-    @test isapprox(snrD_network, 37.69523553190364, rtol = 1e-8 )             
+    @test isapprox(snrD_network, 37.69523553190364, rtol = 1e-12 )             
 
     snrHM_network = SNR(PhenomHM(), mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal,  network)
-    @test isapprox(snrHM_network, 37.92175372990184, rtol = 1e-8 )
+    @test isapprox(snrHM_network, 37.92175372990184, rtol = 1e-12 )
 
     fisherD_network = FisherMatrix(
     PhenomD(), mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, network, coordinate_shift=false)
@@ -45,15 +45,15 @@ using Test
     0.008003990135235535
     1.9969726122385671]
 
-    @test isapprox(errors, errors_tabulated, rtol = 1e-8)
+    @test isapprox(errors, errors_tabulated, rtol = 1e-12)
 
 
     fisherHM_network = FisherMatrix(
         PhenomHM(), mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, network, coordinate_shift=false)
-    cov = CovMatrix(fisherHM_network)
-    errors = Errors(cov)
+    covHM = CovMatrix(fisherHM_network)
+    errorsHM = Errors(covHM)
 
-    errors_tabulated= [0.0013747374660239894
+    errors_tabulatedHM= [0.0013747374660239894
     0.014491816156939124
     0.28068667314616297
     0.7462978126898637
@@ -65,5 +65,5 @@ using Test
     0.0036638964937824718
     0.4224977988686636]
 
-    @test isapprox(errors == errors_tabulated, rtol = 1e-8)
+    @test isapprox(errorsHM, errors_tabulatedHM, rtol = 1e-12)
 end
