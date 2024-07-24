@@ -424,16 +424,16 @@ Relevant references:
 
 
 
-function _readQNMgrid_a(pathGWFASTWF::String)
-    return readdlm(pathGWFASTWF * "QNMData_a.txt")[:, 1]   # [:,1] is to make it a 1D array instead of a 2D array
+function _readQNMgrid_a(pathWF::String)
+    return readdlm(pathWF * "QNMData_a.txt")[:, 1]   # [:,1] is to make it a 1D array instead of a 2D array
 end
 
-function _readQNMgrid_fring(pathGWFASTWF::String)
-    return readdlm(pathGWFASTWF * "QNMData_fring.txt")[:, 1]   # [:,1] is to make it a 1D array instead of a 2D array
+function _readQNMgrid_fring(pathWF::String)
+    return readdlm(pathWF * "QNMData_fring.txt")[:, 1]   # [:,1] is to make it a 1D array instead of a 2D array
 end
 
-function _readQNMgrid_fdamp(pathGWFASTWF::String)
-    return readdlm(pathGWFASTWF * "QNMData_fdamp.txt")[:, 1]   # [:,1] is to make it a 1D array instead of a 2D array
+function _readQNMgrid_fdamp(pathWF::String)
+    return readdlm(pathWF * "QNMData_fdamp.txt")[:, 1]   # [:,1] is to make it a 1D array instead of a 2D array
 end
 
 """ helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
@@ -507,10 +507,19 @@ function Phi(model::PhenomD,
     container = nothing,
 )
 
-    path=pwd()*"/useful_files/WFfiles/"
-    QNMgrid_a = _readQNMgrid_a(path)
-    QNMgrid_fring = _readQNMgrid_fring(path)
-    QNMgrid_fdamp = _readQNMgrid_fdamp(path)
+    # Get the path to the directory of this file
+    PACKAGE_DIR = @__DIR__
+
+    # Go one step back in the path (from ""GW.jl/src" to "GW.jl")
+    PARENT_DIR = dirname(PACKAGE_DIR)
+    
+    # Construct the path to the "useful_files" folder from the parent directory
+    USEFUL_FILES_DIR = joinpath(PARENT_DIR, "useful_files/WFfiles/")
+
+    QNMgrid_a = _readQNMgrid_a(USEFUL_FILES_DIR)
+    QNMgrid_fring = _readQNMgrid_fring(USEFUL_FILES_DIR)
+    QNMgrid_fdamp = _readQNMgrid_fdamp(USEFUL_FILES_DIR)
+
 
     M = mc / (eta^(0.6))
     eta2 = eta * eta # These can speed up a bit, we call them multiple times
@@ -1083,10 +1092,19 @@ function Ampl(model::PhenomD,
 
     # """
 
-    path=pwd()*"/useful_files/WFfiles/"
-    QNMgrid_a = _readQNMgrid_a(path)
-    QNMgrid_fring = _readQNMgrid_fring(path)
-    QNMgrid_fdamp = _readQNMgrid_fdamp(path)
+    # Get the path to the directory of this file
+    PACKAGE_DIR = @__DIR__
+
+    # Go one step back in the path (from ""GW.jl/src" to "GW.jl")
+    PARENT_DIR = dirname(PACKAGE_DIR)
+    
+    # Construct the path to the "useful_files" folder from the parent directory
+    USEFUL_FILES_DIR = joinpath(PARENT_DIR, "useful_files/WFfiles/")
+
+    QNMgrid_a = _readQNMgrid_a(USEFUL_FILES_DIR)
+    QNMgrid_fring = _readQNMgrid_fring(USEFUL_FILES_DIR)
+    QNMgrid_fdamp = _readQNMgrid_fdamp(USEFUL_FILES_DIR)
+
     # Useful quantities
     M = mc / (eta^(3.0 / 5.0))
     eta2 = eta * eta # This can speed up a bit, we call it multiple times
@@ -1884,10 +1902,18 @@ function Phi(model::PhenomD_NRTidal,
     #     println("Lambda1 or Lambda2 is zero, please use PhenomNSBH")
     # end
 
-    path=pwd()*"/useful_files/WFfiles/"
-    QNMgrid_a = _readQNMgrid_a(path)
-    QNMgrid_fring = _readQNMgrid_fring(path)
-    QNMgrid_fdamp = _readQNMgrid_fdamp(path)
+    # Get the path to the directory of this file
+    PACKAGE_DIR = @__DIR__
+
+    # Go one step back in the path (from ""GW.jl/src" to "GW.jl")
+    PARENT_DIR = dirname(PACKAGE_DIR)
+    
+    # Construct the path to the "useful_files" folder from the parent directory
+    USEFUL_FILES_DIR = joinpath(PARENT_DIR, "useful_files/WFfiles/")
+
+    QNMgrid_a = _readQNMgrid_a(USEFUL_FILES_DIR)
+    QNMgrid_fring = _readQNMgrid_fring(USEFUL_FILES_DIR)
+    QNMgrid_fdamp = _readQNMgrid_fdamp(USEFUL_FILES_DIR)
 
     M = mc / (eta^(0.6))
     eta2 = eta * eta # These can speed up a bit, we call them multiple times
@@ -5753,10 +5779,18 @@ function Phi(model::PhenomNSBH,
         GMsun_over_c3 = uc.GMsun_over_c3,
     )
 
-    path=pwd()*"/useful_files/WFfiles/"
-    QNMgrid_a = _readQNMgrid_a(path)
-    QNMgrid_fring = _readQNMgrid_fring(path)
-    QNMgrid_fdamp = _readQNMgrid_fdamp(path)
+    # Get the path to the directory of this file
+    PACKAGE_DIR = @__DIR__
+
+    # Go one step back in the path (from ""GW.jl/src" to "GW.jl")
+    PARENT_DIR = dirname(PACKAGE_DIR)
+    
+    # Construct the path to the "useful_files" folder from the parent directory
+    USEFUL_FILES_DIR = joinpath(PARENT_DIR, "useful_files/WFfiles/")
+
+    QNMgrid_a = _readQNMgrid_a(USEFUL_FILES_DIR)
+    QNMgrid_fring = _readQNMgrid_fring(USEFUL_FILES_DIR)
+    QNMgrid_fdamp = _readQNMgrid_fdamp(USEFUL_FILES_DIR)
 
 
     M = mc / (eta^(0.6))

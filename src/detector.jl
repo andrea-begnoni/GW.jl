@@ -14,6 +14,7 @@ using Base.Threads
 using BenchmarkTools
 using HDF5
 using ProgressMeter
+using Base.Threads
 
 export DetectorStructure, DetectorCoordinates, Detector, _readASD, _readPSD, getCoords, CE1Id_coordinates, CE1Id, CE2NM_coordinates,
          CE2NM, CE2NSW_coordinates, CE2NSW, ETS_coodinates, ETS, ETLS_coodinates, ETLS, ETMR_coordinates, ETMR, ETLMR_coordinates, ETLMR, 
@@ -113,38 +114,48 @@ function getCoords(detector)
 end
 
 # Here we define the detectors present in the code, to create a new one, just follow the structure of the existing ones, for more information look at the tutorials
+
+# Get the path to the directory of this file
+PACKAGE_DIR = @__DIR__
+
+# Go one step back in the path (from ""GW.jl/src" to "GW.jl")
+PARENT_DIR = dirname(PACKAGE_DIR)
+
+# Construct the path to the "useful_files" folder from the parent directory
+PSDS_DIR = joinpath(PARENT_DIR, "useful_files/psds/")
+
 CE1Id_coordinates=detector.DetectorCoordinates(43.827 * pi/180, -112.825 * pi/180, -45 * pi/180, 90. * pi/180)
-CE1Id = detector.Detector(43.827 * pi/180, -112.825 * pi/180, -45 * pi/180, 90. * pi/180, 'L', _readASD("useful_files/psds/ce_strain/cosmic_explorer.txt")..., "CE1Id")
+CE1Id = detector.Detector(43.827 * pi/180, -112.825 * pi/180, -45 * pi/180, 90. * pi/180, 'L', _readASD(PSDS_DIR*"ce_strain/cosmic_explorer.txt")..., "CE1Id")
 
 CE2NM_coordinates=detector.DetectorCoordinates(33.160 * pi/180, -106.480 * pi/180, -105. * pi/180, 90. * pi/180)
-CE2NM = detector.Detector(33.160 * pi/180, -106.480 * pi/180, -105. * pi/180, 90. * pi/180, 'L', _readASD("useful_files/psds/ce_strain/cosmic_explorer_20km.txt")..., "CE2NM")
+CE2NM = detector.Detector(33.160 * pi/180, -106.480 * pi/180, -105. * pi/180, 90. * pi/180, 'L', _readASD(PSDS_DIR*"ce_strain/cosmic_explorer_20km.txt")..., "CE2NM")
 
 CE2NSW_coordinates=detector.DetectorCoordinates(-34. * pi/180, 145. * pi/180, 0. * pi/180, 90. * pi/180)
-CE2NSW=detector.Detector(-34. * pi/180, 145. * pi/180, 0. * pi/180, 90. * pi/180, 'L', _readASD("useful_files/psds/ce_strain/cosmic_explorer_20km.txt")...,  "CE2NSW")
+CE2NSW=detector.Detector(-34. * pi/180, 145. * pi/180, 0. * pi/180, 90. * pi/180, 'L', _readASD(PSDS_DIR*"ce_strain/cosmic_explorer_20km.txt")...,  "CE2NSW")
 
 ETS_coodinates = detector.DetectorCoordinates((40. +31. /60.) * pi/180, (9. +25. /60.) * pi/180, 0. * pi/180, 60. * pi/180)
-ETS=detector.Detector((40. +31. /60.) * pi/180, (9. +25. /60.) * pi/180, 0. * pi/180, 60. * pi/180, 'T', _readASD("useful_files/psds/ET-0000A-18.txt")...,  "ETS")
+ETS=detector.Detector((40. +31. /60.) * pi/180, (9. +25. /60.) * pi/180, 0. * pi/180, 60. * pi/180, 'T', _readASD(PSDS_DIR*"ET-0000A-18.txt")...,  "ETS")
 
 ETLS_coodinates = detector.DetectorCoordinates((40. +31. /60.) * pi/180, (9. +25. /60.) * pi/180, 0. * pi/180, 90. * pi/180)
-ETLS = detector.Detector((40. +31. /60.) * pi/180, (9. +25. /60.) * pi/180, 0. * pi/180, 90. * pi/180, 'L', _readASD("useful_files/psds/ET-0000A-18.txt")...,  "ETLS")
+ETLS = detector.Detector((40. +31. /60.) * pi/180, (9. +25. /60.) * pi/180, 0. * pi/180, 90. * pi/180, 'L', _readASD(PSDS_DIR*"ET-0000A-18.txt")...,  "ETLS")
 
 ETMR_coordinates = detector.DetectorCoordinates((50. +43. /60. +23. /3600.) * pi/180, (5. +55. /60. +14. /3600.) * pi/180, 0. * pi/180, 60. * pi/180)
-ETMR = detector.Detector((50. +43. /60. +23. /3600.) * pi/180, (5. +55. /60. +14. /3600.) * pi/180, 0. * pi/180, 60. * pi/180, 'T', _readASD("useful_files/psds/ET-0000A-18.txt")...,  "ETMR")
+ETMR = detector.Detector((50. +43. /60. +23. /3600.) * pi/180, (5. +55. /60. +14. /3600.) * pi/180, 0. * pi/180, 60. * pi/180, 'T', _readASD(PSDS_DIR*"ET-0000A-18.txt")...,  "ETMR")
 
 ETLMR_coordinates = detector.DetectorCoordinates((50. +43. /60. +23. /3600.) * pi/180, (5. +55. /60. +14. /3600.) * pi/180, 0. * pi/180, 90. * pi/180)
-ETLMR = detector.Detector((50. +43. /60. +23. /3600.) * pi/180, (5. +55. /60. +14. /3600.) * pi/180, 0. * pi/180, 90. * pi/180, 'L', _readASD("useful_files/psds/ET-0000A-18.txt")...,  "ETLMR")
+ETLMR = detector.Detector((50. +43. /60. +23. /3600.) * pi/180, (5. +55. /60. +14. /3600.) * pi/180, 0. * pi/180, 90. * pi/180, 'L', _readASD(PSDS_DIR*"ET-0000A-18.txt")...,  "ETLMR")
 
 LIGO_L_coordinates = detector.DetectorCoordinates(30.563 * pi/180, -90.774 * pi/180, 242.71636956358617* pi/180, 90. * pi/180)
-LIGO_L = detector.Detector(30.563 * pi/180, -90.774 * pi/180, 242.71636956358617* pi/180, 90. * pi/180, 'L', _readASD("useful_files/psds/observing_scenarios_paper/aligo_O3actual_L1.txt")...,  "LIGO_L")
+LIGO_L = detector.Detector(30.563 * pi/180, -90.774 * pi/180, 242.71636956358617* pi/180, 90. * pi/180, 'L', _readASD(PSDS_DIR*"observing_scenarios_paper/aligo_O3actual_L1.txt")...,  "LIGO_L")
 
 LIGO_H_coordinates = detector.DetectorCoordinates(46.455 * pi/180, -119.408 * pi/180, 170.99924234706103* pi/180, 90. * pi/180)
-LIGO_H = detector.Detector(46.455 * pi/180, -119.408 * pi/180, 170.99924234706103* pi/180, 90. * pi/180, 'L', _readASD("useful_files/psds/observing_scenarios_paper/aligo_O3actual_H1.txt")...,  "LIGO_H")
+LIGO_H = detector.Detector(46.455 * pi/180, -119.408 * pi/180, 170.99924234706103* pi/180, 90. * pi/180, 'L', _readASD(PSDS_DIR*"observing_scenarios_paper/aligo_O3actual_H1.txt")...,  "LIGO_H")
 
 VIRGO_coordinates = detector.DetectorCoordinates(43.631 * pi/180, 10.504 * pi/180, 115.56756342034298* pi/180, 90. * pi/180)
-VIRGO = detector.Detector(43.631 * pi/180, 10.504 * pi/180, 115.56756342034298* pi/180, 90. * pi/180, 'L', _readASD("useful_files/psds/observing_scenarios_paper/avirgo_O3actual.txt")..., "VIRGO")
+VIRGO = detector.Detector(43.631 * pi/180, 10.504 * pi/180, 115.56756342034298* pi/180, 90. * pi/180, 'L', _readASD(PSDS_DIR*"observing_scenarios_paper/avirgo_O3actual.txt")..., "VIRGO")
 
 KAGRA_coordinates = detector.DetectorCoordinates(36.412 * pi/180, 137.306 * pi/180, 15.396* pi/180, 90. * pi/180)
-KAGRA = detector.Detector(36.412 * pi/180, 137.306 * pi/180, 15.396* pi/180, 90. * pi/180, 'L', _readASD("useful_files/psds/observing_scenarios_paper/kagra_128Mpc.txt")...,  "KAGRA")
+KAGRA = detector.Detector(36.412 * pi/180, 137.306 * pi/180, 15.396* pi/180, 90. * pi/180, 'L', _readASD(PSDS_DIR*"observing_scenarios_paper/kagra_128Mpc.txt")...,  "KAGRA")
 
 
 # with this function you can check all the detectors available, it also prints the length of the arms for future interferomenters
@@ -327,7 +338,7 @@ function _patternFunction(
     alpha_rad = alpha_grad * pi / 180.0
 
     ra, dec = uc._ra_dec_from_theta_phi_rad(theta, phi)
-    tmp = ra - DetectorCoordinates.longitude_rad - 2.0 * pi * tRef
+    tmp = @. ra - DetectorCoordinates.longitude_rad - 2.0 * pi * tRef
     a1 =
         @. 0.0625 *
         sin(2 * (DetectorCoordinates.orientation_rad + alpha_rad)) *

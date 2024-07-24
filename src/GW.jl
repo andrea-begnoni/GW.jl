@@ -6,6 +6,7 @@ module GW
 # using Interpolations
 # using HDF5
 # using BenchmarkTools
+# using Test
 # using Trapz 
 # using ForwardDiff
 # using Distributions
