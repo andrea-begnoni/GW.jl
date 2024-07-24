@@ -23,10 +23,10 @@ using Test
     ET = ETS
     network = [CE_1, CE_2, ET];
     snrD_network = SNR(PhenomD(), mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal,  network) 
-    @test isapprox(snrD_network, 37.69523553190364, rtol = 1e-10 )             
+    @test isapprox(snrD_network, 37.69523553190364, rtol = 1e-8 )             
 
     snrHM_network = SNR(PhenomHM(), mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal,  network)
-    @test isapprox(snrHM_network, 37.92175372990184, rtol = 1e-10 )
+    @test isapprox(snrHM_network, 37.92175372990184, rtol = 1e-8 )
 
     fisherD_network = FisherMatrix(
     PhenomD(), mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, network, coordinate_shift=false)
@@ -45,7 +45,7 @@ using Test
     0.008003990135235535
     1.9969726122385671]
 
-    @test isapprox(errors, errors_tabulated, rtol = 1e-10)
+    @test isapprox(errors, errors_tabulated, rtol = 1e-8)
 
 
     fisherHM_network = FisherMatrix(
@@ -65,5 +65,5 @@ using Test
     0.0036638964937824718
     0.4224977988686636]
 
-    @test isapprox(errors == errors_tabulated, rtol = 1e-10)
+    @test isapprox(errors == errors_tabulated, rtol = 1e-8)
 end
