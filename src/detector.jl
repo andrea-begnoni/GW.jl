@@ -15,6 +15,7 @@ using BenchmarkTools
 using HDF5
 using ProgressMeter
 using Base.Threads
+using Dates
 
 export DetectorStructure, DetectorCoordinates, Detector, _readASD, _readPSD, getCoords, CE1Id_coordinates, CE1Id, CE2NM_coordinates,
          CE2NM, CE2NSW_coordinates, CE2NSW, ETS_coodinates, ETS, ETLS_coodinates, ETLS, ETMR_coordinates, ETMR, ETLMR_coordinates, ETLMR, 
@@ -1272,6 +1273,8 @@ function SNR(model::Model,
         path = pwd()
         mkpath("output/"*name_folder)
         path = pwd()*"/output/"*name_folder*"/"
+        date = Dates.now()
+        date_format = string(Dates.format(date, "e dd u yyyy HH:MM:SS"))
         h5open(path*"SNRs.h5", "w") do file
             attributes(file)["number_events"] = nEvents
             if typeof(detector) == Vector{Detector}
@@ -1279,10 +1282,12 @@ function SNR(model::Model,
                 attributes(file)["Detectors"] = label
                 attributes(file)["What_this_file_contains"] = "This file contains the SNR for the "*string(nEvents)*" events of the catalog 
                                 generated with the "*string(typeof(model))*" waveform model. The SNR is calculated for the "*join(label,",")*" detectors and the correction due to Earth Motion was "*string(useEarthMotion)*"."
+                attributes(file)["date"] = date_format
             else
                 attributes(file)["Detectors"] = detector.label
                 attributes(file)["What_this_file_contains"] = "This file contains the SNR for the "*string(nEvents)*" events of the catalog 
                                 generated with the "*string(typeof(model))*" waveform model. The SNR is calculated for the "*detector.label*" detectors and the correction due to Earth Motion was "*string(useEarthMotion)*"."
+                attributes(file)["date"] = date_format
             end   
             
             write(file, "SNRs", SNRs) 
@@ -1510,7 +1515,7 @@ function FisherMatrix_internal(model::Model,
             fmin = fmin,
             fmax = fmax,
             res = res,
-            ampl_precomputation = ampl_precomputation,
+            #ampl_precomputation = ampl_precomputation,
         )
         if SNRval < rho_thres
             if return_SNR == true
@@ -1863,7 +1868,7 @@ function FisherMatrix_Tdetector(model::Model,
             fmin = fmin,
             fmax = fmax,
             res = res,
-            ampl_precomputation = ampl_precomputation
+            #ampl_precomputation = ampl_precomputation
         )
         if SNRval < rho_thres
             if return_SNR == true
@@ -2110,7 +2115,8 @@ function FisherMatrix(model::Model,
             path = pwd()
             mkpath("output/"*name_folder)
             path = pwd()*"/output/"*name_folder*"/"
-
+            date = Dates.now()
+            date_format = string(Dates.format(date, "e dd u yyyy HH:MM:SS"))
             h5open(path*"Fishers_SNRs.h5", "w") do file
                 write(file, "Fishers", Fishers)
                 attributes(file)["number_events"] = nEvents
@@ -2118,10 +2124,12 @@ function FisherMatrix(model::Model,
                     label = [detector[i].label for i in eachindex(detector)]
                     attributes(file)["Detectors"] = label
                     attributes(file)["What_this_file_contains"] = "This file contains the Fishers and the SNRs for "*string(nEvents)*" events obtained with the "*string(typeof(model))*" waveform model. The calculations are performed with the "*join(label, ",")*" detectors and the correction due to Earth Motion was "*string(useEarthMotion)*"."
+                    attributes(file)["date"] = date_format
 
                 else
                     attributes(file)["Detectors"] = detector.label
                     attributes(file)["What_this_file_contains"] = "This file contains the Fishers and the SNRs for "*string(nEvents)*" events obtained with the "*string(typeof(model))*" waveform model. The calculations are performed with the "*detector.label*" detector and the correction due to Earth Motion was "*string(useEarthMotion)*"."
+                    attributes(file)["date"] = date_format
 
                 end     
                 write(file, "SNRs", SNRs) 
@@ -2158,7 +2166,8 @@ function FisherMatrix(model::Model,
             path = pwd()
             mkpath("output/"*name_folder)
             path = pwd()*"/output/"*name_folder*"/"
-
+            date = Dates.now()
+            date_format = string(Dates.format(date, "e dd u yyyy HH:MM:SS"))
             h5open(path*"Fishers.h5", "w") do file
                 write(file, "Fishers", Fishers)
                 attributes(file)["number_events"] = nEvents
@@ -2166,11 +2175,11 @@ function FisherMatrix(model::Model,
                     label = [detector[i].label for i in eachindex(detector)]
                     attributes(file)["Detectors"] = label
                     attributes(file)["What_this_file_contains"] = "This file contains the Fishers for "*string(nEvents)*" events obtained with the "*string(typeof(model))*" waveform model. The calculations are performed with the "*join(label,",")*" detectors and the correction due to Earth Motion was "*string(useEarthMotion)*"."
-
+                    attributes(file)["date"] = date_format
                 else
                     attributes(file)["Detectors"] = detector.label
                     attributes(file)["What_this_file_contains"] = "This file contains the Fishers for "*string(nEvents)*" events obtained with the "*string(typeof(model))*" waveform model. The calculations are performed with the "*detector.label*" detector and the correction due to Earth Motion was "*string(useEarthMotion)*"."
-
+                    attributes(file)["date"] = date_format
                 end    
                 if save_catalog
                     write(file, "mc", mc)

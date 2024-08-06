@@ -1,15 +1,16 @@
 ####        GW POPULATION CATALOG       ####
-module catalog
+module catalog # this is the name of this module
 
-import ..UtilsAndConstants as uc
+import ..UtilsAndConstants as uc # this is the module of utilities and constants
 
-using Distributions
+using Distributions # these are the imported Julia modules
 using QuadGK
 using Integrals
 using HDF5
 using Random
+using Dates
 
-export GenerateCatalog, ReadCatalog
+export GenerateCatalog, ReadCatalog # these are the functions that will be exported from this module
 
 """
 Hubble constant as a function of redshift, results in km/s 1/Mpc
@@ -428,8 +429,8 @@ Main function of this module, generates a catalog of events.
 #### Outputs (for the format "GWJulia"):
 -  `chirp_mass_detector_frame` : array of floats, chirp mass in the detector frame.
 -  `eta` : array of floats, symmetric mass ratio.
--  `chi1` : array of floats, dimensionless spin of the most massive object.
--  `chi2` : array of floats, dimensionless spin of the least massive object.
+-  `chi1` : array of floats, dimensionless spin of the most massive object. (chi1 = chi1z, since chi1x = chi1y = 0)
+-  `chi2` : array of floats, dimensionless spin of the least massive object. (chi2 = chi2z, since chi2x = chi2y = 0)
 -  `dL` : array of floats, luminosity distance in Gpc.
 -  `theta` : array of floats, polar angle in radians.
 -  `phi` : array of floats, azimuthal angle in radians.
@@ -584,6 +585,24 @@ function GenerateCatalog(nEvents, population; time_delay_in_Myr = 10., seed_par 
 
         chi1 = rand(Beta(1.6, 4.12), n_samples)
         chi2 = rand(Beta(1.6, 4.12), n_samples)
+
+        # from chi to chiz requires a cosine
+        # this cosine is extracted from a mixture of two distributions (truncated normal and uniform)
+        # defined in arXiv:2111.03634
+        xi = 0.66
+        sigma_t = 1.5
+
+        dist1 = truncated(Normal(0.0, sigma_t), -1.0, 1.0)
+        dist2 = Uniform(-1.0, 1.0)
+        dist_theta_spin = MixtureModel([dist1, dist2], [xi, 1 - xi])
+
+        cos_theta_spin_1 = rand(dist_theta_spin,n_samples)
+        cos_theta_spin_2 = rand(dist_theta_spin,n_samples)
+
+        chiz1 = chi1 .* cos_theta_spin_1
+        chiz2 = chi2 .* cos_theta_spin_2
+        
+
         normalization_BHmass_BBH_first_mass = quadgk(
             M_BH -> BHmass_BBH_first_mass(
                 M_BH,
@@ -675,8 +694,8 @@ function GenerateCatalog(nEvents, population; time_delay_in_Myr = 10., seed_par 
         Lambda_1 = rand(Uniform(0, 2e3), n_samples)
         Lambda_2 = rand(Uniform(0, 2e3), n_samples)
 
-        chi1 = rand(Uniform(-0.05, 0.05), n_samples)
-        chi2 = rand(Uniform(-0.05, 0.05), n_samples)
+        chiz1 = rand(Uniform(-0.05, 0.05), n_samples)
+        chiz2 = rand(Uniform(-0.05, 0.05), n_samples)
 
         m_1 = rand(Uniform(1, 2.5), n_samples)
         m_2 = rand(Uniform(1, 2.5), n_samples)
@@ -731,8 +750,8 @@ function GenerateCatalog(nEvents, population; time_delay_in_Myr = 10., seed_par 
         Lambda_1 = rand(Uniform(0, 2e3), n_samples)
         Lambda_2 = zeros(n_samples)
 
-        chi1 = rand(Uniform(-0.05, 0.05), n_samples)
-        chi2 = rand(Normal(0.0, 0.15), n_samples)
+        chiz1 = rand(Uniform(-0.05, 0.05), n_samples)
+        chiz2 = rand(Normal(0.0, 0.15), n_samples)
 
         normalization_BHmass_NSBH =
             quadgk(M_BH -> BHmass_NSBH(M_BH, a_1, b_1, a_2, b_2, a_3, b_3), 2.0, 25.0)[1]
@@ -813,6 +832,9 @@ function GenerateCatalog(nEvents, population; time_delay_in_Myr = 10., seed_par 
     chirp_mass_detector_frame = chirp_mass .* (1 .+ z)
     eta = (m_1 .* m_2) ./ (m_1 .+ m_2) .^ 2
     dL = get_dL(z, clight, get_H_z, H0, Omega0_m, Omega0_Lambda) ./ 1e3 # Gpc
+    date = Dates.now()
+    date_format = string(Dates.format(date, "e dd u yyyy HH:MM:SS"))
+    
     h5open(name_file, "w") do file
         attributes(file)["format"] = "GWJulia"
         attributes(file)["number_events"] = nEvents
@@ -821,11 +843,13 @@ function GenerateCatalog(nEvents, population; time_delay_in_Myr = 10., seed_par 
         attributes(file)["time_delay_in_Myrs"] = time_delay_in_Myr
         attributes(file)["SFR"] = SFR
         attributes(file)["total_number_sources_yr"] = total_number_sources_yr
+        attributes(file)["local_rate"] = local_rate
+        attributes(file)["date"] = date_format
 
         write(file, "Lambda1", Lambda_1)
         write(file, "Lambda2", Lambda_2)
-        write(file, "chi1", chi1)
-        write(file, "chi2", chi2)
+        write(file, "chi1", chiz1)  # chi1 = chi1z, since chi1x = chi1y = 0
+        write(file, "chi2", chiz2)  # chi2 = chi2z, since chi2x = chi2y = 0
         write(file, "mc", chirp_mass_detector_frame)
         write(file, "eta", eta)
         write(file, "dL", dL)
@@ -840,8 +864,8 @@ function GenerateCatalog(nEvents, population; time_delay_in_Myr = 10., seed_par 
 
     return chirp_mass_detector_frame,
     eta,
-    chi1,
-    chi2,
+    chiz1,
+    chiz2,
     dL,
     theta,
     phi,
@@ -868,8 +892,8 @@ Read the catalog generated with the function GenerateCatalog.
 #### Outputs:
 -  `mc` : array of floats, chirp mass in the detector frame.
 -  `eta` : array of floats, symmetric mass ratio.
--  `chi1` : array of floats, dimensionless spin of the most massive object.
--  `chi2` : array of floats, dimensionless spin of the least massive object.
+-  `chi1` : array of floats, dimensionless spin of the most massive object. (chi1 = chi1z, since chi1x = chi1y = 0)
+-  `chi2` : array of floats, dimensionless spin of the least massive object. (chi2 = chi2z, since chi2x = chi2y = 0)
 -  `dL` : array of floats, luminosity distance in Gpc.  
 -  `theta` : array of floats, polar angle in radians.
 -  `phi` : array of floats, azimuthal angle in radians.

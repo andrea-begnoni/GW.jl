@@ -21,7 +21,7 @@ Before proceding with the installation verify that you have Julia installed on y
 
 The code is also a julia package so it is very easy to install, enter in julia
 ```
-git clone git@gitlab.com:Andrea_Begnoni/gwjulia.git
+git clone 
 ```
 You also need to install the packages required by the code (this operation will be automated soon). To do so open Julia on your terminal by typing
 ```bash 
