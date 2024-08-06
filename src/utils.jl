@@ -1,15 +1,13 @@
-module UtilsAndConstants
+module UtilsAndConstants    # this is the name of the module
 
-using ForwardDiff
+using ForwardDiff # these are the Julia packages that are used in this module
 using LinearAlgebra
 using LaTeXStrings
 
 export GMsun_over_c3, GMsun_over_c2, uGpc, GMsun_over_c2_Gpc, REarth_km, clight_kms, clightGpc, Lamt_delLam_from_Lam12, _ra_dec_from_theta_phi_rad, _theta_phi_from_ra_dec_rad, CovMatrix, Errors, SkyArea
-##############################################################################
-# PHYSICAL CONSTANTS
-##############################################################################
-# See http://asa.hmnao.com/static/files/2021/Astronomical_Constants_2021.pdf
 
+
+##############################################################################
 GMsun_over_c3 = 4.925491025543575903411922162094833998e-6 # seconds
 
 GMsun_over_c2 = 1.476625061404649406193430731479084713e3 # meters
@@ -24,15 +22,15 @@ clight_kms = 2.99792458e5 # km/s
 
 clightGpc = clight_kms / 3.0856778570831e+22
 
-MSUN = 1.988409902147041637325262574352366540e30  # kg
 """Solar mass"""
+MSUN = 1.988409902147041637325262574352366540e30  # kg
 
-MRSUN = GMsun_over_c2
 """Geometrized nominal solar mass, m"""
+MRSUN = GMsun_over_c2
+
 
 ##############################################################################
-# TIDAL PARAMETERS
-##############################################################################
+
 
 r"""
 Compute the dimensionless tidal deformability combinations L"\tilde{Lambda}" and L"\delta\tilde{Lambda}", defined in `arXiv:1402.5156 <https://arxiv.org/abs/1402.5156>`_ eq. (5) and (6), as a function of the dimensionless tidal deformabilities of the two objects and the symmetric mass ratio.
@@ -47,7 +45,6 @@ Function from GWFAST.
 - (float, float) L"\tilde{Lambda}" and L"\delta\tilde{Lambda}", 
 
 """
-
 function Lamt_delLam_from_Lam12(Lambda1, Lambda2, eta)
 
     eta2 = eta*eta
@@ -176,8 +173,6 @@ Calculate the sky area from the covariance matrix and the catalog of sources. Th
     covMatrix = Matrix{Float64}(I, 11,11)
     sky_area = SkyArea(covMatrix, 0.1) 
 """
-
-
 function SkyArea(covMatrix, thetaCatalog; percent_level = 90)
     # take phi and theta from covMatrix and multiply them
 

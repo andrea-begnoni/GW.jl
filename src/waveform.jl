@@ -1,9 +1,10 @@
 module waveform
-### This is the first module in the pipeline, it computes the waveform
+### This is the first module in the pipeline (after the catalog generation), it computes the waveform
 
-# every module imports the previous one and the UtilsAndConstants module
-# include("utils.jl")
-import ..UtilsAndConstants as uc     #Andrea import vs using
+# The waveforms presented here are adapted and modified from LALSimulation and GWFAST (https://github.com/CosmoStatGW/gwfast)
+
+
+import ..UtilsAndConstants as uc    
 
 ### Import Julia packages relevant for this module
 using DelimitedFiles
@@ -84,8 +85,10 @@ function _available_waveforms(waveform::String)
         return PhenomD_NRTidal()
     elseif waveform == "PhenomNSBH"
         return PhenomNSBH()
+    elseif waveform == "PhenomXAS"
+        return PhenomXAS()
     else
-        error("Waveform not available. Choose between: TaylorF2, PhenomD, PhenomHM, PhenomD_NRTidal, PhenomNSBH")
+        error("Waveform not available. Choose between: TaylorF2, PhenomD, PhenomHM, PhenomD_NRTidal, PhenomNSBH, PhenomXAS")
     end
 end
 
@@ -174,9 +177,9 @@ struct AmplslmpStructure
     four_four::Union{Float64, Vector{Float64}}
 end
 
-##############################################################################
-# TAYLORF2 3.5 RESTRICTED PN WAVEFORM
-##############################################################################
+####################################################
+# TAYLORF2 WAVEFORM
+####################################################
 
 
 """
@@ -376,8 +379,6 @@ This can be approximated as 2 f_ISCO for inspiral only waveforms:
 function _fcut(model::TaylorF2, mc, eta, chi1, chi2; GMsun_over_c3 = uc.GMsun_over_c3)
 
     println("Using fcut of Kerr orbit since the two angular momenta 'chi1' and 'chi2' were given")
-    # println("chi1: ", chi1)
-    # println("chi2: ", chi2)
     eta2 = eta*eta
     Mtot = mc/(eta^(3. /5.))
     Seta = ifelse(eta<.25,sqrt(1.0 - 4.0 * eta),0.)
@@ -409,22 +410,9 @@ function _r_ISCO_of_chi(chi)
     return ifelse(chi>0., 3.0 + Z2_ISCO - sqrt((3.0 - Z1_ISCO)*(3.0 + Z1_ISCO + 2.0*Z2_ISCO)), 3.0 + Z2_ISCO + sqrt((3.0 - Z1_ISCO)*(3.0 + Z1_ISCO + 2.0*Z2_ISCO)))
 end
 
-##############################################################################
+#############################################################
 # IMRPhenomD WAVEFORM
-##############################################################################
-
-@doc raw"""
-IMRPhenomD waveform model.
-
-Relevant references:
-    [1] `arXiv:1508.07250 <https://arxiv.org/abs/1508.07250>`_
-    
-    [2] `arXiv:1508.07253 <https://arxiv.org/abs/1508.07253>`_
-    All is taken from LALSimulation and arXiv:1508.07250, arXiv:1508.07253
-
-"""
-
-
+#############################################################
 
 function _readQNMgrid_a(pathWF::String)
     return readdlm(pathWF * "QNMData_a.txt")[:, 1]   # [:,1] is to make it a 1D array instead of a 2D array
@@ -542,8 +530,7 @@ function Phi(model::PhenomD,
     m1ByM = 0.5 * (1.0 + Seta)
     m2ByM = 0.5 * (1.0 - Seta)
     # We work in dimensionless frequency M*f, not f
-    #fgrid = M*GMsun_over_c3*f
-    fgrid = M * GMsun_over_c3 .* f # ANDREA: maybe it would be more useful if this function works with arrays of sources of size n_processes
+    fgrid = M * GMsun_over_c3 .* f 
     # As in arXiv:1508.07253 eq. (4) and LALSimIMRPhenomD_internals.c line 97
     chiPN = (chi_s * (1.0 - eta * 76.0 / 113.0) + Seta * chi_a)
     xi = -1.0 + chiPN
@@ -687,7 +674,7 @@ function Phi(model::PhenomD,
             xi2
         ) * xi
 
-    # Compute the TF2 phase coefficients and put them in a dictionary (spin effects are included up to 3.5PN)
+    # Compute the TF2 phase coefficients and put them in a structure (spin effects are included up to 3.5PN)
     TF2OverallAmpl = 3 / (128.0 * eta)
 
     # For 3PN coeff we use chi1 and chi2 so to have the quadrupole moment explicitly appearing
@@ -824,7 +811,6 @@ function Phi(model::PhenomD,
     C2Int = DPhiIns - DPhiInt
 
     # This is the inspiral phase computed at fInsJoin
-    # PhiInsJoin = PhiInspcoeffs['initial_phasing'] + PhiInspcoeffs['two_thirds']*(fInsJoin^(2. /3.)) + PhiInspcoeffs['third']*(fInsJoin^(1. /3.)) + PhiInspcoeffs['third_log']*(fInsJoin^(1. /3.))*log(pi*fInsJoin)/3. + PhiInspcoeffs['log']*log(pi*fInsJoin)/3. + PhiInspcoeffs['min_third']*(fInsJoin^(-1. /3.)) + PhiInspcoeffs['min_two_thirds']*(fInsJoin^(-2. /3.)) + PhiInspcoeffs['min_one']/fInsJoin + PhiInspcoeffs['min_four_thirds']*(fInsJoin^(-4. /3.)) + PhiInspcoeffs['min_five_thirds']*(fInsJoin^(-5. /3.)) + (PhiInspcoeffs['one']*fInsJoin + PhiInspcoeffs['four_thirds']*(fInsJoin^(4. /3.)) + PhiInspcoeffs['five_thirds']*(fInsJoin^(5. /3.)) + PhiInspcoeffs['two']*fInsJoin*fInsJoin)/eta
     PhiInsJoin =
         PhiInspcoeffs.initial_phasing +
         PhiInspcoeffs.two_thirds * (fInsJoin^(2.0 / 3.0)) +
@@ -918,7 +904,7 @@ function Phi(model::PhenomD,
         ) * etaInv
 
     # LAL sets fRef as the minimum frequency, do the same
-    fRef = fgrid[1]   #minimum(fgrid)
+    fRef = fgrid[1] 
 
     phiRef = ifelse(
         fRef < fInsJoin,
@@ -1010,8 +996,8 @@ function Phi(model::PhenomD,
 
 
     return phi
-    #return @. phis + ifelse(fgrid < fcutPar, -t0 * (fgrid - fRef) - phiRef, 0.0)
 end
+
 """ helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
 """
 function Ampl(model::PhenomD,
@@ -1029,12 +1015,7 @@ function Ampl(model::PhenomD,
     GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc,
     container = nothing,
 )
-    # raise error if Lambda1 or Lambda2 are different from zero
-    # if Lambda1 != 0.0 || Lambda2 != 0.0
-    #     println("You requested Lambda1 and/or Lambda2 different from zero")
-    #     println("Tidal parameters Lambda1 and Lambda2 are not supported in PhenomD")
-    #     println("The code put them to zero")
-    # end
+
     return Ampl(model, f, mc, eta, chi1, chi2, dL, fcutPar = fcutPar, fInsJoin_Ampl = fInsJoin_Ampl, GMsun_over_c3 = GMsun_over_c3, GMsun_over_c2_Gpc = GMsun_over_c2_Gpc, container = container)
 end
 
@@ -1050,6 +1031,7 @@ Compute the amplitude of the GW as a function of frequency, given the events par
 -  `eta`: Symmetric mass ratio of the binary.
 -  `chi1`: Dimensionless spin of the first BH.
 -  `chi2`: Dimensionless spin of the second BH.
+-  `dL`: Luminosity distance to the binary, in Gpc.
 #### Optional arguments:
 -  `fInsJoin_Ampl`: Dimensionless frequency (Mf) at which the inspiral amplitude switches to the intermediate amplitude. Default is 0.014.
 -  `fcutPar`: Dimensionless frequency (Mf) at which we define the end of the waveform. Default is 0.2. 
@@ -1068,7 +1050,6 @@ Compute the amplitude of the GW as a function of frequency, given the events par
     Ampl(PhenomD(), f, mc, eta, chi1, chi2, dL)
 ```
 """
-
 function Ampl(model::PhenomD,
     f,
     mc,
@@ -1081,18 +1062,7 @@ function Ampl(model::PhenomD,
     GMsun_over_c3 = uc.GMsun_over_c3,
     GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc,
     container = nothing,
-    #container_jacobian = nothing,
 )
-
-    # """
-    # Compute the amplitude of the GW as a function of frequency, given the events parameters.
-
-    #  array f: Frequency grid on which the phase will be computed, in :math:`\\rm Hz`.
-    #  dict(array, array, ...) kwargs: Dictionary with arrays containing the parameters of the events to compute the amplitude of, as in :py:data:`events`.
-    #  GW amplitude for the chosen events evaluated on the frequency grid.
-    # :rtype: array
-
-    # """
 
     # Get the path to the directory of this file
     PACKAGE_DIR = @__DIR__
@@ -1213,7 +1183,7 @@ function Ampl(model::PhenomD,
     f3Interm = fpeak
     dfInterm = 0.5 * (f3Interm - f1Interm)
     f2Interm = f1Interm + dfInterm
-    # First write the inspiral coefficients, we put them in a dictionary and label with the power in front of which they appear
+    # First write the inspiral coefficients, we put them in a structure and label with the power in front of which they appear
     amp0 = sqrt(2.0 * eta / 3.0) * (pi^(-1.0 / 6.0))
     Acoeffs = AcoeffsStructure(
         ((-969.0 + 1804.0 * eta) * (pi^(2.0 / 3.0))) / 672.0,
@@ -1634,21 +1604,12 @@ function Ampl(model::PhenomD,
             container .= [ampl[i] for i in eachindex(ampl)]
          end
     else 
-         #phi = @. phis + ifelse(fgrid .< fcutPar, -t0 * (fgrid - fRef) - phiRef, ForwardDiff.Dual{typeof(eta).parameters[1]}(0.,zeros(typeof(eta).parameters[3])...))
         ampl = Overallamp * amp0 .* (fgrid .^ (-7.0 / 6.0)) .* amplitudeIMR
 
         if container !== nothing
             container .= [ampl[i].value for i in eachindex(ampl)]
         end
-        # if container_jacobian !== nothing
-        #     container_jacobian .= [ampl[i] for i in eachindex(ampl)]
-        # end
     end
-    # ampl = Overallamp * amp0 .* (fgrid .^ (-7.0 / 6.0)) .* amplitudeIMR
-
-    # if container !== nothing
-    #     container .= [ampl[i].value for i in eachindex(ampl)]
-    # end
 
     return ampl
 end
@@ -1668,8 +1629,6 @@ Valid for all the models considered in this code.
 -  (float) spin of the final object.
 
 """
-
-
 function _finalspin(model::Model, eta, chi1, chi2)
 
     eta2 = eta * eta
@@ -1714,7 +1673,6 @@ Valid for all the models considered in this code.
 -  (float) total radiated energy.
 
 """
-
 function _radiatednrg(model::Model, eta, chi1, chi2)
 
 
@@ -1762,7 +1720,6 @@ We use the expression in `arXiv:0907.0700 <https://arxiv.org/abs/0907.0700>`_ eq
 -  (array) time to coalescence for the chosen event evaluated on the frequency grid, in seconds.
 
 """
-
 function _tau_star(model::Model, f, mc, eta; GMsun_over_c3 = uc.GMsun_over_c3)
 
 
@@ -1832,22 +1789,10 @@ function _fcut(model::Model, mc, eta; fcutPar = 0.2, GMsun_over_c3 = uc.GMsun_ov
 end
 
 
-##############################################################################
+##########################################################
 # IMRPhenomD_NRTidalv2 WAVEFORM
-##############################################################################
-"""
-IMRPhenomD_NRTidal waveform model.
+##########################################################
 
-Relevant references:
-    [1] `arXiv:1508.07250 <https://arxiv.org/abs/1508.07250>`_
-    
-    [2] `arXiv:1508.07253 <https://arxiv.org/abs/1508.07253>`_
-    
-    [3] `arXiv:1905.06011 <https://arxiv.org/abs/1905.06011>`_
-
- kwargs: Optional arguments to be passed to the parent class :py:class:`WaveFormModel`, such as ``is_chi1chi2``.
-    
-"""
 # All is taken from LALSimulation and arXiv:1508.07250, arXiv:1508.07253, arXiv:1905.06011
 
 """
@@ -1884,7 +1829,6 @@ Compute the phase of the GW as a function of frequency, given the events paramet
     Phi(PhenomD_NRTidal(), f, mc, eta, dL, chi1, chi2, Lambda1, Lambda2)
 ```
 """
-
 function Phi(model::PhenomD_NRTidal,
     f,
     mc,
@@ -1897,12 +1841,6 @@ function Phi(model::PhenomD_NRTidal,
     fcutPar = 0.2,
     GMsun_over_c3 = uc.GMsun_over_c3,
 )
-    # # print that if Lambda1 and or Lambda2 are zero one should resolve to other waveforms
-    # if Lambda1 == 0. && Lambda2 ==0.
-    #     println("Lambda1 and Lambda2 are zero, please use other waveforms, valid for BBH")
-    # elseif Lambda1 == 0. || Lambda2 == 0.
-    #     println("Lambda1 or Lambda2 is zero, please use PhenomNSBH")
-    # end
 
     # Get the path to the directory of this file
     PACKAGE_DIR = @__DIR__
@@ -2089,7 +2027,7 @@ function Phi(model::PhenomD_NRTidal,
             xi2
         ) * xi
 
-    # Compute the TF2 phase coefficients and put them in a dictionary (spin effects are included up to 3.5PN)
+    # Compute the TF2 phase coefficients and put them in a structure (spin effects are included up to 3.5PN)
     TF2OverallAmpl = 3 / (128.0 * eta)
 
     TF2_5coeff_tmp =
@@ -2185,8 +2123,6 @@ function Phi(model::PhenomD_NRTidal,
         sigma4 * 0.5,
     )
 
-    #initial_phasing 
-    #log
     #Now compute the coefficients to align the three parts
 
     fMRDJoin = 0.5 * fring
@@ -2199,8 +2135,6 @@ function Phi(model::PhenomD_NRTidal,
     # PhiIns'(fInsJoin)  =   PhiInt'(fInsJoin) + C2Int
     # This is the first derivative wrt f of the inspiral phase computed at fInsJoin, first add the PN contribution and then the higher order calibrated terms
 
-    #DPhiIns = (2.0*TF2coeffs['seven']*TF2OverallAmpl*((pi*fInsJoin)^(7. /3.)) + (TF2coeffs['six']*TF2OverallAmpl + TF2coeffs['six_log']*TF2OverallAmpl * (1.0 + log(pi*fInsJoin)/3.))*((pi*fInsJoin)^(2.)) + TF2coeffs['five_log']*TF2OverallAmpl*((pi*fInsJoin)^(5. /3.)) - TF2coeffs['four']*TF2OverallAmpl*((pi*fInsJoin)^(4. /3.)) - 2. *TF2coeffs['three']*TF2OverallAmpl*(pi*fInsJoin) - 3. *TF2coeffs['two']*TF2OverallAmpl*((pi*fInsJoin)^(2. /3.)) - 4. *TF2coeffs['one']*TF2OverallAmpl*((pi*fInsJoin)^(1. /3.)) - 5. *TF2coeffs['zero']*TF2OverallAmpl)*pi/(3. *((pi*fInsJoin)^(8. /3.)))
-    #DPhiIns = (2.0*TF2coeffs['seven']*TF2OverallAmpl*((pi*fInsJoin)^(7. /3.)) + (TF2coeffs['six']*TF2OverallAmpl + TF2coeffs['six_log']*TF2OverallAmpl * (1.0 + log(pi*fInsJoin)/3.))*((pi*fInsJoin)^(2.)) + TF2coeffs['five_log']*TF2OverallAmpl*((pi*fInsJoin)^(5. /3.)) - TF2coeffs['four']*TF2OverallAmpl*((pi*fInsJoin)^(4. /3.)) - 2. *TF2coeffs['three']*TF2OverallAmpl*(pi*fInsJoin) - 3. *TF2coeffs['two']*TF2OverallAmpl*((pi*fInsJoin)^(2. /3.)) - 4. *TF2coeffs['one']*TF2OverallAmpl*((pi*fInsJoin)^(1. /3.)) - 5. *TF2coeffs['zero']*TF2OverallAmpl)*pi/(3. *((pi*fInsJoin)^(8. /3.)))
     DPhiIns =
         (
             2.0 * TF2coeffs.seven * TF2OverallAmpl * ((pi * fInsJoin)^(7.0 / 3.0)) +
@@ -2221,13 +2155,12 @@ function Phi(model::PhenomD_NRTidal,
             sigma3 * (fInsJoin^(2.0 / 3.0)) +
             sigma4 * fInsJoin
         ) * etaInv
-    #DPhiIns = DPhiIns + (sigma1 + sigma2*(fInsJoin^(1. /3.)) + sigma3*(fInsJoin^(2. /3.)) + sigma4*fInsJoin)*etaInv
+
     # This is the first derivative of the Intermediate phase computed at fInsJoin
     DPhiInt = (beta1 + beta3 / (fInsJoin^4) + beta2 / fInsJoin) * etaInv
     C2Int = DPhiIns - DPhiInt
 
     # This is the inspiral phase computed at fInsJoin
-    # PhiInsJoin = PhiInspcoeffs['initial_phasing'] + PhiInspcoeffs['two_thirds']*(fInsJoin^(2. /3.)) + PhiInspcoeffs['third']*(fInsJoin^(1. /3.)) + PhiInspcoeffs['third_log']*(fInsJoin^(1. /3.))*log(pi*fInsJoin)/3. + PhiInspcoeffs['log']*log(pi*fInsJoin)/3. + PhiInspcoeffs['min_third']*(fInsJoin^(-1. /3.)) + PhiInspcoeffs['min_two_thirds']*(fInsJoin^(-2. /3.)) + PhiInspcoeffs['min_one']/fInsJoin + PhiInspcoeffs['min_four_thirds']*(fInsJoin^(-4. /3.)) + PhiInspcoeffs['min_five_thirds']*(fInsJoin^(-5. /3.)) + (PhiInspcoeffs['one']*fInsJoin + PhiInspcoeffs['four_thirds']*(fInsJoin^(4. /3.)) + PhiInspcoeffs['five_thirds']*(fInsJoin^(5. /3.)) + PhiInspcoeffs['two']*fInsJoin*fInsJoin)/eta
     PhiInsJoin =
         PhiInspcoeffs.initial_phasing +
         PhiInspcoeffs.two_thirds * (fInsJoin^(2.0 / 3.0)) +
@@ -2321,7 +2254,7 @@ function Phi(model::PhenomD_NRTidal,
         ) * etaInv
 
     # LAL sets fRef as the minimum frequency, do the same
-    fRef = fgrid[1]   #minimum(fgrid)
+    fRef = fgrid[1]  
 
     phiRef = ifelse(
         fRef < fInsJoin,
@@ -2483,13 +2416,6 @@ function Ampl(model::PhenomD_NRTidal,
     GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc,
 )
 
-    # # print that if Lambda1 and or Lambda2 are zero one should resolve to other waveforms
-    # if Lambda1 == 0. && Lambda2 ==0.
-    #     println("Lambda1 and Lambda2 are zero, please use other waveforms, valid for BBH")
-    # elseif Lambda1 == 0. || Lambda2 == 0.
-    #     println("Lambda1 or Lambda2 is zero, please use PhenomNSBH")
-    # end
-
     ampl_notidal = Ampl(PhenomD(),
     f,
     mc,
@@ -2522,20 +2448,9 @@ function Ampl(model::PhenomD_NRTidal,
     ampTidal = @. -9.0*kappa2T*(xTidal^3.25)*polyTidal
     
     # # Compute the dimensionless merger frequency (Mf) for the Planck taper filtering
-    # a_0 = 0.3586
-    # n_1 = 3.35411203e-2
-    # n_2 = 4.31460284e-5
-    # d_1 = 7.54224145e-2
-    # d_2 = 2.23626859e-4
 
-    
-    # numPT = 1.0 + n_1*kappa2T + n_2*kappa2T^2
-    # denPT = 1.0 + d_1*kappa2T + d_2*kappa2T^2
-    # Q_0 = a_0 / sqrt(q)
-    # f_merger = Q_0 * (numPT / denPT) / (2. *pi)
     f_end_taper = _fcut(model, mc, eta, Lambda1, Lambda2) * GMsun_over_c3 * M
     f_merger = f_end_taper / 1.2
-    # The derivative of the Planck taper filter can return NaN in some points because of numerical issues, we declare it explicitly to avoid the issue # ANDREA check
     planck_taper = @. ifelse(fgrid < f_merger, 1., ifelse(fgrid > f_end_taper, 0., 1. - 1. /(exp((f_end_taper - f_merger)/(fgrid - f_merger) + (f_end_taper - f_merger)/(fgrid - f_end_taper)) + 1.)))
 
     return  @. (ampl_notidal + 2*sqrt(pi/5.)*ampTidal*Overallamp)*planck_taper
@@ -2559,7 +2474,6 @@ We cut the waveform slightly before the end of the Planck taper filter, for nume
 -  (float) Cut frequency of the waveform, in Hz.
 
 """
-  
 function _fcut(model::PhenomD_NRTidal, mc, eta, Lambda1, Lambda2; GMsun_over_c3=uc.GMsun_over_c3)
 
     M = mc/eta^(3. /5.)
@@ -2588,9 +2502,9 @@ end
 
 
 
-############################################################################################################
-#   IMRPHENOM  HM 
-############################################################################################################
+####################################################
+#   IMRPHENOM_HM WAVEFORM
+####################################################
 """
 Compute the phase of the GW as a function of frequency, given the events parameters.
 
@@ -2620,7 +2534,6 @@ Compute the phase of the GW as a function of frequency, given the events paramet
     Phi(PhenomHM(), f, mc, eta, chi1, chi2)
 ```
 """
-
 function Phi(model::PhenomHM,
     f,
     mc,
@@ -2658,7 +2571,7 @@ function Phi(model::PhenomHM,
     # We work in dimensionless frequency M*f, not f
     fgrid = M * GMsun_over_c3 .* f
     # This is MfRef, needed to recover LAL, which sets fRef to f_min if fRef=0
-    fRef = fgrid[1] #minimum(fgrid)
+    fRef = fgrid[1] 
     # As in arXiv:1508.07253 eq. (4) and LALSimIMRPhenomD_internals.c line 97
     chiPN = (chi_s * (1.0 - eta * 76.0 / 113.0) + Seta * chi_a)
     xi = -1.0 + chiPN
@@ -2802,7 +2715,7 @@ function Phi(model::PhenomHM,
             xi2
         ) * xi
 
-    # Compute the TF2 phase coefficients and put them in a dictionary (spin effects are included up to 3.5PN)
+    # Compute the TF2 phase coefficients and put them in a structure (spin effects are included up to 3.5PN)
 
     TF2OverallAmpl = 3 / (128.0 * eta)
     TF2_5coeff_tmp =
@@ -3088,7 +3001,7 @@ function Phi(model::PhenomHM,
             C2MRDHM = DPhiIntTempVal - DPhiMRDVal
             C1MRDHM = PhiIntTempVal - PhiMRJoinTemp * etaInv - C2MRDHM * fMRDJoin
 
-            # Compute mapping coefficinets
+            # Compute mapping coefficients
             Map_fl = fInsJoin
             Map_fi = Map_fl / Rholm
             Map_fr = fringlm
@@ -3465,7 +3378,7 @@ function Ampl(model::PhenomHM,
     f3Interm = fpeak
     dfInterm = 0.5 * (f3Interm - f1Interm)
     f2Interm = f1Interm + dfInterm
-    # First write the inspiral coefficients, we put them in a dictionary and label with the power in front of which they appear
+    # First write the inspiral coefficients, we put them in a structure and label with the power in front of which they appear
     amp0 = sqrt(2.0 * eta / 3.0) * (pi^(-1.0 / 6.0))
     Acoeffs = AcoeffsStructure(
         ((-969.0 + 1804.0 * eta) * (pi^(2.0 / 3.0))) / 672.0,
@@ -3942,7 +3855,7 @@ function Ampl(model::PhenomHM,
                    ),
                )
 
-            # This results in NaNs having 0/0, correct for this using nan_to_num()
+            # This results in NaNs having 0/0, correct for this with replace!
             tmpResults[i] = replace!(
                 completeAmpl .* (beta_term1 ./ beta_term2) .* HMamp_term1 ./ HMamp_term2,
                 NaN => 0.0,
@@ -3998,7 +3911,6 @@ the sum of the contributions of the different modes of the waveform. The functio
     hp, hc = hphc(PhenomHM(), f, mc, eta, chi1, chi2, dL, iota)
 ```
 """
-
 function hphc(model::PhenomHM,
     f,
     mc,
@@ -4041,7 +3953,7 @@ function hphc(model::PhenomHM,
     # We work in dimensionless frequency M*f, not f
     fgrid = M * GMsun_over_c3 .* f
     # This is MfRef, needed to recover LAL, which sets fRef to f_min if fRef=0
-    fRef = fgrid[1] #minimum(fgrid)
+    fRef = fgrid[1] 
     # As in arXiv:1508.07253 eq. (4) and LALSimIMRPhenomD_internals.c line 97
     chiPN = (chi_s * (1.0 - eta * 76.0 / 113.0) + Seta * chi_a)
     xi = -1.0 + chiPN
@@ -4057,9 +3969,8 @@ function hphc(model::PhenomHM,
     modes = [21, 22, 32, 33, 43, 44]
     ells = [2, 2, 3, 3, 4, 4]
     mms = [1, 2, 2, 3, 3, 4]
-    # Domain mapping for dimnesionless BH spin
+    # Domain mapping for dimensionless BH spin
     alphaRDfr = log(2.0 - aeff) / log(3.0)
-    # beta = 1./ (2. + l - abs(m))
     betaRDfr = [1.0 / 3.0, 0.5, 1.0 / 3.0, 0.5, 1.0 / 3.0, 0.5]
     kappaRDfr = alphaRDfr .^ betaRDfr
     kappaRDfr2 = kappaRDfr .* kappaRDfr
@@ -4131,22 +4042,10 @@ function hphc(model::PhenomHM,
     fringlm = real(tmpRDfr) ./ (2.0 * pi * finMass)
     fdamplm = imag(tmpRDfr) ./ (2.0 * pi * finMass)
 
-    # # This recomputation is needed for JAX derivatives
-    # betaRDfr = 0.5
-    # kappaRDfr  = alphaRDfr^betaRDfr
-    # kappaRDfr2 = kappaRDfr*kappaRDfr
-    # kappaRDfr3 = kappaRDfr*kappaRDfr2
-    # kappaRDfr4 = kappaRDfr*kappaRDfr3
+    
 
-    # tmpRDfr = 1.0 + kappaRDfr * (1.557847 * exp(2.903124 * 1j) + 1.95097051 * exp(5.920970 * 1j) * kappaRDfr + 2.09971716 * exp(2.760585 * 1j) * kappaRDfr2 + 1.41094660 * exp(5.914340 * 1j) * kappaRDfr3 + 0.41063923 * exp(2.795235 * 1j) * kappaRDfr4)
-
-    # fring = (real(tmpRDfr)/(2.*pi*finMass))
-    # fdamp = (imag(tmpRDfr)/(2.*pi*finMass))
-
-    #ANDREA: they recalculate the fring and fdamp, but they are already calculated in the previous cell for the 22 mode. I will use the previous ones
     fring = fringlm[2]
     fdamp = fdamplm[2]
-    # solved this way
     # Compute sigma coefficients appearing in arXiv:1508.07253 eq. (28)
     # They derive from a fit, whose numerical coefficients are in arXiv:1508.07253 Tab. 5
     sigma1 =
@@ -4279,7 +4178,7 @@ function hphc(model::PhenomHM,
             xi2
         ) * xi
 
-    # Compute the TF2 phase coefficients and put them in a dictionary (spin effects are included up to 3.5PN)
+    # Compute the TF2 phase coefficients and put them in a structure (spin effects are included up to 3.5PN)
 
     TF2OverallAmpl = 3 / (128.0 * eta)
     TF2_5coeff_tmp =
@@ -4547,7 +4446,7 @@ function hphc(model::PhenomHM,
     f3Interm = fpeak
     dfInterm = 0.5 * (f3Interm - f1Interm)
     f2Interm = f1Interm + dfInterm
-    # First write the inspiral coefficients, we put them in a dictionary and label with the power in front of which they appear
+    # First write the inspiral coefficients, we put them in a structure and label with the power in front of which they appear
     amp0 = sqrt(2.0 * eta / 3.0) * (pi^(-1.0 / 6.0))
     Acoeffs = AcoeffsStructure(
         ((-969.0 + 1804.0 * eta) * (pi^(2.0 / 3.0))) / 672.0,
@@ -4939,11 +4838,6 @@ function hphc(model::PhenomHM,
     # there is a 2 * sqrt(5/(64*pi)) missing w.r.t the standard coefficient, which comes from the (2,2) shperical harmonic
     Overallamp = M * GMsun_over_c2_Gpc * M * GMsun_over_c3 / dL
 
-    # function completeAmpl(infreqs, Acoeffs=Acoeffs, delta0=delta0, delta1=delta1, delta2=delta2, delta3=delta3, delta4=delta4, fpeak=fpeak, fring=fring, fdamp=fdamp, fInsJoin_Ampl=fInsJoin_Ampl, fcutPar=fcutPar)
-
-    #     return @. Overallamp*amp0*(infreqs^(-7. /6.))*ifelse(infreqs < fInsJoin_Ampl, 1. + (infreqs^(2. /3.))*Acoeffs.two_thirds + (infreqs^(4. /3.))*Acoeffs.four_thirds + (infreqs^(5. /3.))*Acoeffs.five_thirds + (infreqs^(7. /3.))*Acoeffs.seven_thirds + (infreqs^(8. /3.))*Acoeffs.eight_thirds + infreqs*(Acoeffs.one + infreqs*Acoeffs.two + infreqs*infreqs*Acoeffs.three), ifelse(infreqs < fpeak, delta0 + infreqs*delta1 + infreqs*infreqs*(delta2 + infreqs*delta3 + infreqs*infreqs*delta4), ifelse(infreqs < fcutPar, exp(-(infreqs - fring)*gamma2/(fdamp*gamma3))* (fdamp*gamma3*gamma1) / ((infreqs - fring)*(infreqs - fring) + fdamp*gamma3*fdamp*gamma3), 0.)))
-    # end
-
 
 
 
@@ -4988,7 +4882,7 @@ function hphc(model::PhenomHM,
 
     phi0 = 0.5 * phiRef
 
-    # Now compute all the modes, they are 6, we parallelize
+    # Now compute all the modes, they are 6
 
     Rholm, Taulm = fring ./ fringlm, fdamplm ./ fdamp
     # Rholm and Taulm only figure in the MRD part, the rest of the coefficients is the same, recompute only this
@@ -5012,7 +4906,6 @@ function hphc(model::PhenomHM,
        alpha4 * Rholm * atan((fMRDJoinPh - alpha5 * fring) / (fdamp * Rholm * Taulm))
     C2MRDHM = @. DPhiIntTempVal - DPhiMRDVal
     C1MRDHM = @. (PhiIntTempVal - PhiMRJoinTemp * etaInv - C2MRDHM * fMRDJoinPh)
-    #Rholm, Taulm, DPhiMRDVal, PhiMRJoinTemp, C2MRDHM = Rholm', Taulm', DPhiMRDVal', PhiMRJoinTemp', C2MRDHM'
 
     # Scale input frequencies according to PhenomHM model
     # Compute mapping coefficinets
@@ -5049,6 +4942,7 @@ function hphc(model::PhenomHM,
     reshape(Map_amAmp, 1, :),
     reshape(Map_bmAmp, 1, :),
     reshape(Map_brAmp, 1, :)
+
     Map_amPhi, Map_bmPhi, Map_arPhi =
         reshape(Map_amPhi, 1, :), reshape(Map_bmPhi, 1, :), reshape(Map_arPhi, 1, :)
 
@@ -5120,8 +5014,7 @@ function hphc(model::PhenomHM,
         completeAmpl .* (beta_term1 ./ beta_term2) .* HMamp_term1 ./ HMamp_term2,
         NaN => 0.0,
     )
-    #AmplsAllModes = AmplsAllModes.transpose(0,2,1)
-    #C1MRDHM, C2MRDHM, Rholm, Taulm = C1MRDHM', C2MRDHM', Rholm', Taulm'
+
     C1MRDHM, C2MRDHM, Rholm, Taulm = reshape(C1MRDHM, 1, :),
     reshape(C2MRDHM, 1, :),
     reshape(Rholm, 1, :),
@@ -5324,7 +5217,6 @@ function hphc(model::PhenomHM,
             ),
         )
     PhisAllModes = @. PhisAllModes - t0 * (fgrid - fRef) - mms * phi0 + complShiftm[mms+1]
-    #modes = expand_dims(modes, len(modes.shape))
     Y, Ymstar = _spinWeighted_SphericalHarmonic(iota, modes)
     Ymstar = conj(Ymstar)
     Y, Ymstar = reshape(Y, 1, :), reshape(Ymstar, 1, :)
@@ -5349,8 +5241,7 @@ end
 """
 useful functions for hphc()
 """
-
-function _onePointFiveSpinPN_Ampl(infreqs, l, m, chi_s, chi_a, eta, Seta) #is the output a number or an array?
+function _onePointFiveSpinPN_Ampl(infreqs, l, m, chi_s, chi_a, eta, Seta) 
     # PN amplitudes function, needed to scale
 
     v = @. (2.0 * pi * infreqs / m)^(1.0 / 3.0)
@@ -5396,7 +5287,6 @@ end
 """
 useful functions for hphc()
 """
-
 function _completePhase(
     infreqs,
     C1MRDuse,
@@ -5465,7 +5355,6 @@ end
 """
 useful functions for hphc()
 """
-
 function _onePointFiveSpinPN_hphc(infreqs, chi_s, chi_a, modes, mms, eta, Seta) #this one is different from the one in Ampl since it computes ones for all the multipoles, to distinguish look at the number of inputs
     # PN amplitudes function, needed to scale
 
@@ -5512,7 +5401,6 @@ end
 """
 useful functions for hphc()
 """
-
 function _spinWeighted_SphericalHarmonic(theta, modes)
     # Taken from arXiv:0709.0093v3 eq. (II.7), (II.8) and LALSimulation for the s=-2 case and up to l=4.
     # We assume already phi=0 and s=-2 to simplify the function
@@ -5579,21 +5467,9 @@ end
 """
 useful functions for hphc()
 """
-
 function _RDfreqCalc(model::PhenomHM, finalmass, finalspin, l, m)
-    """
-    Compute the real and imaginary parts of the complex ringdown frequency for the :math:`(l,m)` mode as in :py:class:`LALSimIMRPhenomHM.c` line 189. This function includes all fits of the different modes.
 
-     array or float finalmass: Mass(es) of the final object(s).
-     array or float finalspin: Spin(s) of the final object(s).
-     int l: :math:`l` of the chosen mode.
-     int m: :math:`m` of the chosen mode.
-     Real and imaginary parts of the complex ringdown frequency (ringdown and damping frequencies).
-    :rtype: tuple(array, array) or tuple(float, float)
-
-    """
-
-    # Domain mapping for dimnesionless BH spin
+    # Domain mapping for dimenionless BH spin
     alpha = log(2.0 - finalspin) / log(3.0)
     beta = 1.0 / (2.0 + l - abs(m))
     kappa = alpha^beta
@@ -5680,37 +5556,17 @@ function _RDfreqCalc(model::PhenomHM, finalmass, finalspin, l, m)
 end
 
 
-
-##############################################################################
+#######################################################
 # IMRPhenomNSBH WAVEFORM
-##############################################################################
-    
+#######################################################
 """
 IMRPhenomNSBH waveform model
 
-The inputs labelled as 1 refer to the BH (e.g. ``'chi1z'``) and with 2 to the NS (e.g. ``'Lambda2'``)
-
-Relevant references:
-    [1] `arXiv:1508.07250 <https://arxiv.org/abs/1508.07250>`_
-    
-    [2] `arXiv:1508.07253 <https://arxiv.org/abs/1508.07253>`_
-    
-    [3] `arXiv:1509.00512 <https://arxiv.org/abs/1509.00512>`_
-    
-    [4] `arXiv:1905.06011 <https://arxiv.org/abs/1905.06011>`_
-
- bool, optional verbose: Boolean specifying if the code has to print additional details during execution.
- kwargs: Optional arguments to be passed to the parent class :py:class:`WaveFormModel`, such as ``is_chi1chi2``.
-    
-NOTE: In LAL, to compute the parameter xi_tide in arXiv:1509.00512 eq. (8), the roots are extracted.
-        In Python this would break the possibility to vectorise so, to circumvent the issue, we compute
-        a grid of xi_tide as a function of the compactness, mass ratio and BH spin, and then use a 3D
-        interpolator. The first time the code runs, if this interpolator is not already present, it will be
-        computed (the base resolution of the grid is 200 pts per parameter, that we find
-        sufficient to reproduce LAL waveforms with good precision, given the smooth behaviour of the function,
-        but this can be raised if needed. In this case, it is necessary to change the name of the file assigned to self.path_xiTide_tab and the res input passed to _make_xiTide_interpolator())
+The inputs labelled as 1 refer to the BH 
+The inputs labelled as 2 refer to the NS
+There is only one Lambda, the one of the NS
+Ref: arXiv:1508.07250, arXiv:1508.07253, arXiv:1509.00512, arXiv:1905.06011
 """
-# All is taken from LALSimulation and arXiv:1508.07250, arXiv:1508.07253, arXiv:1509.00512, arXiv:1905.06011
     # Dimensionless frequency (Mf) at which the inspiral phase switches to the intermediate phase
     # Dimensionless frequency (Mf) at which we define the end of the waveform
     
@@ -5728,10 +5584,7 @@ function Phi(model::PhenomNSBH,
     fcutPar = 0.2,
     GMsun_over_c3 = uc.GMsun_over_c3,
 )
-    # if Lambda2 !==0.
-    #     println("you give two values of Lambda, only one is needed for NSBH")
-    #     println("the code automaticaly set the second one to zero")
-    # end
+
     return Phi(model, f, mc, eta, chi1, chi2, Lambda; fInsJoin = fInsJoin, fcutPar = fcutPar, GMsun_over_c3 = GMsun_over_c3)
 end
 
@@ -5767,8 +5620,6 @@ Note that the second spin is assumed to be zero.
     Phi(PhenomNSBH(), f, mc, eta, chi1, chi2)
 ```
 """
-
-
 function Phi(model::PhenomNSBH,
         f,
         mc,
@@ -5989,7 +5840,7 @@ function Phi(model::PhenomNSBH,
             xi2
         ) * xi
 
-    # Compute the TF2 phase coefficients and put them in a dictionary (spin effects are included up to 3.5PN)
+    # Compute the TF2 phase coefficients and put them in a structure (spin effects are included up to 3.5PN)
     TF2OverallAmpl = 3 / (128.0 * eta)
 
     # For 3PN coeff we use chi1 and chi2 so to have the quadrupole moment explicitly appearing
@@ -6277,13 +6128,6 @@ function Phi(model::PhenomNSBH,
     denTidal = @. 1.0 + (d_1 * ((pi*fgrid)^(2. /3.))) + (d_3over2 * pi*fgrid) + (d_2 * ((pi*fgrid)^(4. /3.)))
     
     tidal_phase = @. - kappa2T * c_Newt / (m1ByM * m2ByM) * ((pi*fgrid)^(5. /3.)) * numTidal / denTidal
-    # println("phis: ", phis)
-    # println("tidal_phase ", tidal_phase)
-    # println("t0*(fgrid - fRef) ", t0.*(fgrid .- fRef))
-    # println("phiRef ", phiRef)
-    # println("t0 ", t0)
-    # println("fgrid ", fgrid)
-    # println("fRef ", fRef)
     # This pi factor is needed to include LAL fRef rescaling, so to end up with the exact same waveform
     return @. phis + ifelse(fgrid < fcutPar, - t0*(fgrid - fRef) - phiRef + pi +  tidal_phase, 0.)
 end
@@ -6303,17 +6147,14 @@ function Ampl(model::PhenomNSBH,
     GMsun_over_c3 = uc.GMsun_over_c3,
     GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc,
 )
-    # if Lambda2 !==0.
-    #     println("you give two values of Lambda, only one is needed for NSBH")
-    #     println("the code automaticaly set the second one to zero")
-    # end
+
     return Ampl(model, f, mc, eta, chi1, chi2, dL, Lambda1, fcutPar=fcutPar, GMsun_over_c3=GMsun_over_c3, GMsun_over_c2_Gpc=GMsun_over_c2_Gpc)
 end
 
 """
 Compute the amplitude of the GW as a function of frequency, given the events parameters.
 
-    Ampl(PhenomNSBH(), f, mc, eta,  chi1, chi2, Lambda)
+    Ampl(PhenomNSBH(), f, mc, eta,  chi1, chi2, dL, Lambda)
 Note that the second spin is assumed to be zero.
 #### Input arguments:
 -  `model`: Model type, it indicates the waveform model to be used.
@@ -6322,6 +6163,7 @@ Note that the second spin is assumed to be zero.
 -  `eta`: Symmetric mass ratio of the binary.
 -  `chi1`: Dimensionless spin of the first BH.
 -  `chi2`: Dimensionless spin of the second BH.
+-  `dL`: Luminosity distance to the binary, in Gpc.
 -  `Lambda`: Dimensionless tidal deformability of the NS.
 #### Optional arguments:
 -  `fInsJoin_Ampl`: Dimensionless frequency (Mf) at which the inspiral amplitude switches to the intermediate amplitude. Default is 0.014.
@@ -6341,8 +6183,6 @@ Note that the second spin is assumed to be zero.
     Ampl(PhenomNSBH(), f, mc, eta, chi1, chi2, dL, Lambda)
 ```
 """
-
-
 function Ampl(model::PhenomNSBH,
     f,
     mc,
@@ -6355,15 +6195,7 @@ function Ampl(model::PhenomNSBH,
     GMsun_over_c3 = uc.GMsun_over_c3,
     GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc,
 )
-    """
-    Compute the amplitude of the GW as a function of frequency, given the events parameters.
-    
-     array f: Frequency grid on which the phase will be computed, in :math:`\\rm Hz`.
-     dict(array, array, ...) kwargs: Dictionary with arrays containing the parameters of the events to compute the amplitude of, as in :py:data:`events`.
-     GW amplitude for the chosen events evaluated on the frequency grid.
-    :rtype: array
-    
-    """
+
     # Useful quantities
 
     M = mc / (eta^(3.0 / 5.0))
@@ -6434,57 +6266,11 @@ function Ampl(model::PhenomNSBH,
     # see arXiv:1509.00512 eq. (11)
     alphaTor = 0.296
     betaTor = 0.171
-    # In LAL the relation is inverted each time, but this would break the vectorisation,
-    # we use an interpolator on a grid of Comp, q, chi instead. Already with 100 pts per parameter the
-    # agreement we find with LAL waveforms is at machine precision
     
-    #xiTide = _xiTide_solver(comp, q, chi1)
-
-    # xiTide = find_zero( (x,p)-> x^10 - 3*p[2]*x^8 + 2. *p[3]*(p[2]^(3. /2.)) *x^7 - 3. *p[1]*x^4 + 6. *p[1]*p[2]*x^2 - 3. *p[1]*p[2]^2*p[3]^2, 20., Order1(),[q, q*comp, chi1], maxiters=200)^2
-    # println("xiTide: ", xiTide)
-    # println(size(xiTide))
-    # println(typeof(xiTide))
-    #println((xiTide.value).value)
-    # println((xiTide[1].partials)[1].value)
-    # println((xiTide[1].partials)[2].value)
-    # println((xiTide[1].partials)[3].value)
-    # println((xiTide[1].partials)[4].value)
-
-
-
-    # function zeross(eta, Lambda, chi)
-    #     #println(Lambda)
-    #     comp = ifelse(Lambda > 1., a0Comp + a1Comp*log(Lambda) + a2Comp*log(Lambda)^2, 0.5 + (3. *a0Comp-a1Comp-1.5)*Lambda^2 + (-2. *a0Comp+a1Comp+1.)*Lambda^3)
-    #     #println(comp)
-    #     Seta = ifelse(eta>=.25,0.,sqrt(1.0 - 4.0 * eta))
-    #     q = 0.5*(1.0 + Seta - 2.0*eta)/eta
-    #     #println(q)
-    #     #println(q.partials[1])
-    #     mu = comp*q
-    #    c= find_zero( (x,p)-> x^10 - 3*p[2]*x^8 + 2. *p[3]*(p[2]^(3. /2.)) *x^7 - 3. *p[1]*x^4 + 6. *p[1]*p[2]*x^2 - 3. *p[1]*p[2]^2*p[3]^2
-    #                        ,20., Order1(),[q, mu, chi], maxiters=100)^2
-    #     partials = [(c.partials)[i].value for i in eachindex(c.partials)]
-    #     cc = ForwardDiff.Dual{typeof(chi).parameters[1]}((c.value).value, partials...)
-    #     return cc
-    # end
-
-
-    # function zeross(q,mu, chi)
-    #     # println(q)
-    #     # println(q.partials[1])
-        
-
-    #         println(partials...)
-    #         return cc
-    # end
-
     if typeof(eta) == Float64
         xiTide = find_zero( (x,p)-> x^10 - 3*p[2]*x^8 + 2. *p[3]*(p[2]^(3. /2.)) *x^7 - 3. *p[1]*x^4 + 6. *p[1]*p[2]*x^2 - 3. *p[1]*p[2]^2*p[3]^2, 20., Order1(),[q, q*comp, chi1], maxiters=100)^2
     else    # else we are doing the Fisher matrix, i.e. we are using FowardDiff.Duals
-        #partials = [(xiTide.partials)[i].value for i in eachindex(xiTide.partials)]
-        #xiTide = ForwardDiff.Dual{typeof(eta).parameters[1]}((xiTide.value).value, partials...)
-        #xiTide = zeross(q, q*comp, chi1)    # rewrite w/o function
-
+        
         # if we are doing the Fisher matrix we need to derive the roots of the following equation w.r.t. q, q*comp, chi1
         # to do that we need to re-pack the Duals in a way that ForwardDiff can handle
         tmp = find_zero( (x,p)-> x^10 - 3*p[2]*x^8 + 2. *p[3]*(p[2]^(3. /2.)) *x^7 - 3. *p[1]*x^4 + 6. *p[1]*p[2]*x^2 - 3. *p[1]*p[2]^2*p[3]^2
@@ -6495,13 +6281,7 @@ function Ampl(model::PhenomNSBH,
 
 
     end
-        #xiTide = ForwardDiff.Dual{typeof(eta).parameters[1]}((xiTide[1].value).value, (xiTide[1].partials)[1].value, (xiTide[1].partials)[2].value, (xiTide[1].partials)[3].value, (xiTide[1].partials)[4].value, (xiTide[1].partials)[5].value, (xiTide[1].partials)[6].value)#, (xiTide[1].partials)[7].value, (xiTide[1].partials)[8].value, (xiTide[1].partials)[9].value, (xiTide[1].partials)[10].value, (xiTide[1].partials)[11].value)
-    #, xiTide[2].value, xiTide[3].value, xiTide[4].value, xiTide[5].value, xiTide[6].value, xiTide[7].value, xiTide[8].value, xiTide[9].value, xiTide[10].value, xiTide[11].value, xiTide[12].value)
-    # println("xiTide: ", xiTide)
-    # println("comp: ", comp)
-    # println("q: ", q)
-    # println("chi1: ", chi1)
-    # Compute Kerr BH ISCO radius
+
     Z1_ISCO = 1.0 + ((1.0 - chi1^2)^(1. /3.))*((1.0+chi1)^(1. /3.) + (1.0-chi1)^(1. /3.))
     Z2_ISCO = sqrt(3.0*chi1^2 + Z1_ISCO^2)
     r_ISCO  = ifelse(chi1>0., 3.0 + Z2_ISCO - sqrt((3.0 - Z1_ISCO)*(3.0 + Z1_ISCO + 2.0*Z2_ISCO)), 3.0 + Z2_ISCO + sqrt((3.0 - Z1_ISCO)*(3.0 + Z1_ISCO + 2.0*Z2_ISCO)))
@@ -6528,12 +6308,9 @@ function Ampl(model::PhenomNSBH,
     Shat = S1BH / (m1ByM^2 + m2ByM^2) # this would be = (chi1*m1*m1 + chi2*m2*m2)/(m1*m1 + m2*m2), but chi2=0 by assumption # ANDREA what? chi2 was not put to zero
     
     # Compute fit to L_orb in arXiv:1611.00332 eq. (16)
-    #Lorb = (2. *sqrt(3.)*eta + 5.24*3.8326341618708577*eta2 + 1.3*(-9.487364155598392)*eta3)/(1. + 2.88*2.5134875145648374*eta) + ((-0.194)*1.0009563702914628*Shat*(4.409160174224525*eta + 0.5118334706832706*eta2 + (64. - 16. *4.409160174224525 - 4. *0.5118334706832706)*eta3) 
-    #+ 0.0851*0.7877509372255369*Shat^2*(8.77367320110712*eta + (-32.060648277652994)*eta2 + (64. - 16. *8.77367320110712 - 4. *(-32.060648277652994))*eta3) + 0.00954*0.6540138407185817*Shat^3*(22.830033250479833*eta + (-153.83722669033995)*eta2 + (64. - 16. *22.830033250479833 - 4. *(-153.83722669033995))*eta3))/(1. + (-0.579)*0.8396665722805308*Shat*(1.8804718791591157 + (-4.770246856212403)*eta + 0. *eta2 + (64. - 64. *1.8804718791591157 - 16. *(-4.770246856212403) - 4. *0.)*eta3)) + 0.3223660562764661*Seta*eta2*(1. + 9.332575956437443*eta)*chi1 + 2.3170397514509933*Shat*Seta*eta3*(1. + (-3.2624649875884852)*eta)*chi1 + (-0.059808322561702126)*eta3*chi12;
     
     Lorb = (2. *sqrt(3.)*eta + 5.24*3.8326341618708577*eta2 + 1.3*(-9.487364155598392)*eta3)/(1. + 2.88*2.5134875145648374*eta) + ((-0.194)*1.0009563702914628*Shat*(4.409160174224525*eta + 0.5118334706832706*eta2 + (64. - 16. *4.409160174224525 - 4. *0.5118334706832706)*eta3) + 0.0851*0.7877509372255369*Shat^2*(8.77367320110712*eta + (-32.060648277652994)*eta2 + (64. - 16. *8.77367320110712 - 4. *(-32.060648277652994))*eta3) + 0.00954*0.6540138407185817*Shat^3*(22.830033250479833*eta + (-153.83722669033995)*eta2 + (64. - 16. *22.830033250479833 - 4. *(-153.83722669033995))*eta3))/(1. + (-0.579)*0.8396665722805308*Shat*(1.8804718791591157 + (-4.770246856212403)*eta + 0. *eta2 + (64. - 64. *1.8804718791591157 - 16. *(-4.770246856212403) - 4. *0.)*eta3)) + 0.3223660562764661*Seta*eta2*(1. + 9.332575956437443*eta)*chi1 + 2.3170397514509933*Shat*Seta*eta3*(1. + (-3.2624649875884852)*eta)*chi1 + (-0.059808322561702126)*eta3*chi12;
     
-    #Lorb = (2.*np.sqrt(3.)*eta + 5.24*3.8326341618708577*eta2 + 1.3*(-9.487364155598392)*eta*eta2)/(1. + 2.88*2.5134875145648374*eta) + ((-0.194)*1.0009563702914628*Shat*(4.409160174224525*eta + 0.5118334706832706*eta2 + (64. - 16.*4.409160174224525 - 4.*0.5118334706832706)*eta2*eta) + 0.0851*0.7877509372255369*Shat*Shat*(8.77367320110712*eta + (-32.060648277652994)*eta2 + (64. - 16.*8.77367320110712 - 4.*(-32.060648277652994))*eta2*eta) + 0.00954*0.6540138407185817*Shat*Shat*Shat*(22.830033250479833*eta + (-153.83722669033995)*eta2 + (64. - 16.*22.830033250479833 - 4.*(-153.83722669033995))*eta2*eta))/(1. + (-0.579)*0.8396665722805308*Shat*(1.8804718791591157 + (-4.770246856212403)*eta + 0.*eta2 + (64. - 64.*1.8804718791591157 - 16.*(-4.770246856212403) - 4.*0.)*eta2*eta)) + 0.3223660562764661*Seta*eta2*(1. + 9.332575956437443*eta)*chi1 + 2.3170397514509933*Shat*Seta*eta2*eta*(1. + (-3.2624649875884852)*eta)*chi1 + (-0.059808322561702126)*eta2*eta*chi12;
     
     chif = (Lorb + S1BH)*modelRemSp
     
@@ -6615,47 +6392,53 @@ function Ampl(model::PhenomNSBH,
 
 end
 
-# deprecated 
-# """
-# helper function _xiTide_solver(comp, q, chi) for the computation of the parameter :math:`xi_{tide}` in `arXiv:1509.00512 <https://arxiv.org/abs/1509.00512>`_ eq. (8) as a function of the NS compactness, the binary mass ratio and BH spin.
-# Used in the PhenomNSBH model.
-# """
+#######################################################
+# IMRPhenomXAS WAVEFORM
+#######################################################
 
-# function _xiTide_solver(comp, q, chi)
+"""
+Compute the phase of the GW as a function of frequency, given the events parameters.
 
-#     # Coefficients of eq. (8) of arXiv:1509.00512, using as variable sqrt(xi) (so order 10 polynomial)
-#     mu = q*comp
+    Phi(PhenomXAS(), f, mc, eta, chi1, chi2)
 
-#     # roots_tmp = roots(Polynomial([-3. *q*mu^2*chi^2, 0., 6. *q*mu, 0., -3. *q, 0., 0., 2. *chi*(mu^(3. /2.)), -3. *mu, 0., 1.]))
-#     # roots_tmp_real = @. real(roots_tmp[(abs(imag(roots_tmp))<1e-5) & (real(roots_tmp)>0.)])
-#     # res = maximum(roots_tmp_real.^2)
-#     res = find_zero( (x,p)-> x^10 - 3*p[2]*x^8 + 2. *p[3]*(p[2]^(3. /2.)) *x^7 - 3. *p[1]*x^4 + 6. *p[1]*p[2]*x^2 - 3. *p[1]*p[2]^2*p[3]^2
-#                     ,20., Order1(),[q, mu, chi], maxiters=200)^2
-#     return res
-# end
+#### Input arguments:
+-  `model`: Model type, it indicates the waveform model to be used.
+-  `f`: Frequency on which the phase will be computed, in Hz. The function accepts both a single value or an array.
+-  `mc`: Chirp mass of the binary, in solar masses.
+-  `eta`: Symmetric mass ratio of the binary.
+-  `chi1`: Dimensionless spin of the first BH.
+-  `chi2`: Dimensionless spin of the second BH.
+#### Optional arguments:
+-  `fInsJoin_PHI`: Dimensionless frequency (Mf) at which the inspiral phase switches to the intermediate phase. Default is 0.018.
+-  `fcutPar`: Dimensionless frequency (Mf) at which we define the end of the waveform. Default is 0.3. 
+-  `InsPhaseVersion`: Version of the inspiral phase. Default is 104. Other versions are 105, 114, 115.
+-  `IntPhaseVersion`: Version of the intermediate phase. Default is 105. Other version is 104.
+#### Return:
+-  GW phase for the chosen events evaluated for that frequency. The function returns an array of the same length as the input frequency array, if `f` is a Float, return a Float. The phase is given in radians.
 
-
+#### Example:
+```julia
+    mc = 30.
+    eta = 0.25
+    chi1 = 0.5
+    chi2 = 0.5
+    fcut = _fcut(PhenomXAS(), mc, eta)
+    f = 10 .^(range(1.,log10(fcut),length=1000))
+    Phi(PhenomXAS(), f, mc, eta, chi1, chi2)
+```
+"""
 function Phi(model::PhenomXAS,
     f,
     mc,
     eta,
     chi1,
     chi2;
-    fcutPar = 0.3,  # ANDREA in phenomD is 0.2 
+    fcutPar = 0.3,  # In phenomD is 0.2 
     GMsun_over_c3 = uc.GMsun_over_c3,
-    fInsJoin_PHI = 0.018
-)
-    """
-    Compute the phase of the GW as a function of frequency, given the events parameters.
-    
-    :param numpy.ndarray f: Frequency grid on which the phase will be computed, in :math:`\\rm Hz`.
-    :param dict(numpy.ndarray, numpy.ndarray, ...) kwargs: Dictionary with arrays containing the parameters of the events to compute the phase of, as in :py:data:`events`.
-    :return: GW phase for the chosen events evaluated on the frequency grid.
-    :rtype: numpy.ndarray
-    
-    """
-    InsPhaseVersion=104
+    fInsJoin_PHI = 0.018,
+    InsPhaseVersion=104,
     IntPhaseVersion=105
+)
 
     M = mc / (eta^(0.6))
     eta2 = eta * eta # These can speed up a bit, we call them multiple times
@@ -7120,13 +6903,37 @@ function Phi(model::PhenomXAS,
     return phis
 end
 
-# function _completePhaseDer(infreqs)
-#     return @. ifelse(infreqs <= fPhaseMatchIN, (infreqs^(-8. /3.))*dphase0*(dphi0 + dphi1*(infreqs^(1. /3.)) + dphi2*(infreqs^(2. /3.)) + dphi3*infreqs + dphi4*(infreqs^(4. /3.)) + dphi5*(infreqs^(5. /3.)) + (dphi6 + dphi6L*log(infreqs))*infreqs*infreqs + dphi7*(infreqs^(7. /3.)) + (dphi8 + dphi8L*log(infreqs))*(infreqs^(8. /3.)) + (dphi9  + dphi9L*log(infreqs))*infreqs*infreqs*infreqs + a0coloc*(infreqs^(8. /3.)) + a1coloc*infreqs*infreqs*infreqs + a2coloc*(infreqs^(10. /3.)) + a3coloc*(infreqs^(11. /3.)) + a4coloc*(infreqs^4)), ifelse(infreqs <= fPhaseMatchIM, b0coloc + b1coloc/infreqs + b2coloc/(infreqs*infreqs) + b3coloc/(infreqs*infreqs*infreqs) + b4coloc/(infreqs*infreqs*infreqs*infreqs) + (4. *cLcoloc) / ((4. *fdamp*fdamp) + (infreqs - fring)*(infreqs - fring)) + C2Int, (c0coloc + c1coloc*(infreqs^(-1. /3.)) + c2coloc/(infreqs*infreqs) + c4coloc/(infreqs*infreqs*infreqs*infreqs) + (cLcoloc / (fdamp*fdamp + (infreqs - fring)*(infreqs - fring)))) + C2MRD))
-# end
-# function _completePhase(infreqs)
-#     return @. ifelse(infreqs <= fPhaseMatchIN, phiNorm*(infreqs^(-5. /3.))*(phi0 + phi1*(infreqs^(1. /3.)) + phi2*(infreqs^(2. /3.)) + phi3*infreqs + phi4*(infreqs^(4. /3.)) + (phi5 + phi5L*log(infreqs))*(infreqs^(5. /3.)) + (phi6 + phi6L*log(infreqs))*infreqs*infreqs + phi7*(infreqs^(7. /3.)) + (phi8 + phi8L*log(infreqs))*(infreqs^(8. /3.)) + (phi9  + phi9L*log(infreqs))*infreqs*infreqs*infreqs + sigma1*(infreqs^(8. /3.)) + sigma2*(infreqs*infreqs*infreqs) + sigma3*(infreqs^(10. /3.)) + sigma4*(infreqs^(11. /3.)) + sigma5*(infreqs^4)), ifelse(infreqs <= fPhaseMatchIM, b0coloc*infreqs + b1coloc*log(infreqs) - b2coloc/infreqs - b3coloc/(infreqs*infreqs)/2. - (b4coloc/(infreqs*infreqs*infreqs)/3.) + (2. * cLcoloc * atan((infreqs - fring) / (2. * fdamp)))/fdamp + C1Int + C2Int*infreqs, ifelse(infreqs < fcutPar, (c0coloc*infreqs + 1.5*c1coloc*(infreqs^(2. /3.)) - c2coloc/infreqs - c4ov3/(infreqs*infreqs*infreqs) + (cLovfda * atan((infreqs - fring)/fdamp))) + C1MRD + C2MRD*infreqs, 0.)))
-# end
+"""
+Compute the amplitude of the GW as a function of frequency, given the events parameters.
 
+    Ampl(PhenomXAS(), f, mc, eta, chi1, chi2, dL)
+
+#### Input arguments:
+-  `model`: Model type, it indicates the waveform model to be used.
+-  `f`: Frequency on which the amplitude will be computed, in Hz. The function accepts both a single value or an array.
+-  `mc`: Chirp mass of the binary, in solar masses.
+-  `eta`: Symmetric mass ratio of the binary.
+-  `chi1`: Dimensionless spin of the first BH.
+-  `chi2`: Dimensionless spin of the second BH.
+-  `dL`: Luminosity distance to the binary, in Gpc.
+#### Optional arguments:
+-  `fcutPar`: Dimensionless frequency (Mf) at which we define the end of the waveform. Default is 0.3. 
+-  `IntAmpVersion`: Version of the intermediate amplitude. Default is 104. Other versions are 105 and 1043.
+#### Return:
+-  GW amplitude for the chosen events evaluated for that frequency. The function returns an array of the same length as the input frequency array, if `f` is a Float, return a Float. The amplitude is dimensionless.
+
+#### Example:
+```julia
+    mc = 30.
+    eta = 0.25
+    dL = 8.
+    chi1 = 0.5
+    chi2 = 0.5
+    fcut = _fcut(PhenomXAS(), mc, eta)
+    f = 10 .^(range(1.,log10(fcut),length=1000))
+    Ampl(PhenomXAS(), f, mc, eta, chi1, chi2, dL)
+```
+"""
 function Ampl(model::PhenomXAS,
     f,
     mc,
@@ -7135,20 +6942,11 @@ function Ampl(model::PhenomXAS,
     chi2,
     dL;
     fcutPar = 0.3,
+    IntAmpVersion=104,
     GMsun_over_c3 = uc.GMsun_over_c3,
     GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc
     )
-    """
-    Compute the amplitude of the GW as a function of frequency, given the events parameters.
-    
-    :param numpy.ndarray f: Frequency grid on which the phase will be computed, in :math:`\\rm Hz`.
-    :param dict(numpy.ndarray, numpy.ndarray, ...) kwargs: Dictionary with arrays containing the parameters of the events to compute the amplitude of, as in :py:data:`events`.
-    :return: GW amplitude for the chosen events evaluated on the frequency grid.
-    :rtype: numpy.ndarray
-    
-    """
 
-    IntAmpVersion=104
 
     M = mc / (eta^(0.6))
     eta2 = eta * eta # These can speed up a bit, we call them multiple times

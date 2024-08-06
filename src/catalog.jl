@@ -16,7 +16,6 @@ export GenerateCatalog, ReadCatalog # these are the functions that will be expor
 Hubble constant as a function of redshift, results in km/s 1/Mpc
 
 """
-
 function get_H_z(z, H0, Omega0_m, Omega0_Lambda)
     H_z = H0 * (Omega0_m * (1 .+ z) .^ 3 .+ Omega0_Lambda) .^ 0.5 # km/s 1/Mpc
     return H_z
@@ -26,7 +25,6 @@ end
 Luminosity distance as a function of redshift, results in Mpc. clight in km/s
 
 """
-
 function get_dL(z, clight, get_H_z, H0, Omega0_m, Omega0_Lambda)
     dL = zeros(length(z))
     jj = 1
@@ -43,7 +41,6 @@ end
 """
 Comoving distance as a function of redshift, results in Mpc. clight in km/s
 """
-
 function get_comoving_distance(z, clight, get_H_z, H0, Omega0_m, Omega0_Lambda)
     chi = zeros(length(z))
     jj = 1
@@ -59,7 +56,6 @@ end
 Comoving volume element as a function of redshift, results in Mpc^3. clight in km/s
 
 """
-
 function get_dV_dz(z, clight, get_H_z, H0, Omega0_m, Omega0_Lambda)
     H_z = get_H_z(z, H0, Omega0_m, Omega0_Lambda)
     chi = quadgk(k -> 1.0 ./ get_H_z(k, H0, Omega0_m, Omega0_Lambda), 0.0, z)[1] * clight
@@ -84,7 +80,6 @@ end
 """
 Helper function
 """
-
 function smoothing(m_prime, delta_m)
     f = exp(delta_m / m_prime + delta_m / (m_prime - delta_m))
     return f
@@ -93,7 +88,6 @@ end
 """
 Helper function
 """
-
 function S(m, mass_min, delta_m, smoothing)
     if m < mass_min
         S_el = 0.0
@@ -108,8 +102,7 @@ end
 """
 First mass of a BBH system, result in Msun
     
- """
-
+"""
 function BHmass_BBH_first_mass(
     M_BH,
     lambda_peak,
@@ -135,7 +128,6 @@ end
 """
 Helper function
 """
-
 function BHmass_BBH_q(q, mass_min, delta_m, beta_q, S, smoothing, m_1)
     f = q^beta_q * S(q * m_1, mass_min, delta_m, smoothing)   # pdf of q given m_1
     return f
@@ -144,7 +136,6 @@ end
 """
 Helper function
 """
-
 function normalization_BHmass_BBH_q(
     mass_min,
     delta_m,
@@ -165,8 +156,6 @@ end
 """
 Function for the Star Formation Rate (SFR) as a function of redshift, results needs to be normalized
 """
-
-
 function get_Madau_and_friends(z, alpha_z, beta_z, z_p, a_z, b_z, c_z, d_z, friend)
     if friend == "Dickinson"
         f = (1 .+ z)^alpha_z / (1 .+ ((1 .+ z) / (1 .+ z_p))^(alpha_z + beta_z))    # Madau Dickinson
@@ -190,8 +179,6 @@ end
 Rate of BBH/BNS/NSBH mergers as a function of redshift, results need to be normalized
 
 """
-
-
 function Redshift(
     z,
     population,
@@ -276,7 +263,6 @@ end
 """
 Rejection sampling algorithm for the second mass of a BBH system, results in Msun
 """
-
 function rejection_sampling_second_mass(
     BHmass_BBH_q,
     mass_min,
@@ -324,7 +310,6 @@ end
 """
 Rejection sampling algorithm for the redshift
 """
-
 function rejection_sampling_redshift(
     Redshift,
     population,
@@ -382,7 +367,6 @@ end
 """
 Rejection sampling algorithm for the BH mass of a NSBH system, results in Msun
 """
-
 function rejection_sampling_BHmass_NSBH(
     BHmass_NSBH,
     a_1,
@@ -472,7 +456,6 @@ function GenerateCatalog(nEvents, population; time_delay_in_Myr = 10., seed_par 
         friend = "Fragos"
     end
 
-    #format = "GWJulia"#"GWFAST"
     if name_catalog === nothing
         mkpath("catalogs/")
         name_file = string(
@@ -519,8 +502,9 @@ function GenerateCatalog(nEvents, population; time_delay_in_Myr = 10., seed_par 
     c_z = 0.3125
     d_z = 6.2
 
-    if time_delay_in_Myr == 0.0
+    if time_delay_in_Myr == nothing
         # Madau Dickinson
+        println("No time delay")
         alpha_z = 2.7
         beta_z = 3.0
         z_p = 2.0
@@ -536,26 +520,8 @@ function GenerateCatalog(nEvents, population; time_delay_in_Myr = 10., seed_par 
         # Madau Dickinson
         alpha_z, beta_z, z_p = (1.9370202540742487, 3.2160803235570725, 1.8939544282143053)
     else
-        error("Time delay not recognized, the ones available are 0.0, 10.0, 20.0, 50.0")
+        error("Time delay not recognized, the ones available are nothing, 10.0, 20.0, 50.0. Nothing means the default values of the SFR, so no time delay")
     end
-
-    # # Redshift
-    # # Madau Dickinson
-    #ANDREA da fare fit con Madau Fragos
-
-    # alpha_z_NS= 1.42
-    # beta_z_NS = 4.62
-    # z_p_NS = 1.84
-
-    # # Madau Fragos
-
-
-    # a_z_fit=0.035
-    # b_z_fit=3.31
-    # c_z_fit=0.372
-    # d_z_fit=7.59
-
-
 
     # Physics constant
 
@@ -574,7 +540,6 @@ function GenerateCatalog(nEvents, population; time_delay_in_Myr = 10., seed_par 
     phiCoal = rand(Uniform(0, 2 * pi), n_samples)
     tcoal = rand(Uniform(0, 1), n_samples)  #fraction of a day, same as GWFAST. 
     #No need to consider overlaps now, all the events are independent and we only consider earth rotation around its axis (no needs to consider month and year)
-
 
     normalization_redshift = 0.
 
@@ -824,7 +789,7 @@ function GenerateCatalog(nEvents, population; time_delay_in_Myr = 10., seed_par 
     ## number of events in an year
     # integrate the rate over redshift
     total_number_sources_yr = normalization_redshift * local_rate / 1e9 # to convert the normalization factor from Mpc^3 to Gpc^3
-    # this number is not used in the code, it is just to have an idea of the total number of sources in a year
+    # this number is not used in the code, it is just to have an estimate of the total number of sources in a year
 
 
 
@@ -834,7 +799,7 @@ function GenerateCatalog(nEvents, population; time_delay_in_Myr = 10., seed_par 
     dL = get_dL(z, clight, get_H_z, H0, Omega0_m, Omega0_Lambda) ./ 1e3 # Gpc
     date = Dates.now()
     date_format = string(Dates.format(date, "e dd u yyyy HH:MM:SS"))
-    
+
     h5open(name_file, "w") do file
         attributes(file)["format"] = "GWJulia"
         attributes(file)["number_events"] = nEvents
@@ -905,8 +870,6 @@ Read the catalog generated with the function GenerateCatalog.
 -  `Lambda2` : array of floats, tidal deformability of object 2.
 
 """
-
-
 function ReadCatalog(name_file; folder= "catalogs/")
 
     

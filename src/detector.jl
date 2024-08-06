@@ -2,7 +2,7 @@ module detector
 
 
 using ..waveform
-import ..UtilsAndConstants as uc     #Andrea import vs using
+import ..UtilsAndConstants as uc     
 
 ##### JULIA PACKAGES
 using Trapz
@@ -21,6 +21,7 @@ export DetectorStructure, DetectorCoordinates, Detector, _readASD, _readPSD, get
          CE2NM, CE2NSW_coordinates, CE2NSW, ETS_coodinates, ETS, ETLS_coodinates, ETLS, ETMR_coordinates, ETMR, ETLMR_coordinates, ETLMR, 
          LIGO_L_coordinates, LIGO_L, LIGO_H_coordinates, LIGO_H, VIRGO_coordinates, VIRGO, KAGRA_coordinates, KAGRA, _available_detectors,
           _define_events, _deltLoc, _patternFunction, AmplitudeDet, PhaseDet, Strain, SNR, FisherMatrix, _read_Fishers_SNRs
+
 # Here we define all the structures used inside this module
 # define the detector structures
 abstract type DetectorStructure end
@@ -95,7 +96,6 @@ function to read the power spectral density of the noise, which is the square of
 fNoise, psd = _readPSD("path/to/file.txt", [1,2])
 ```
 """
-
 function _readPSD(pathPSD::String; cols = [1,2])
     fNoise, psd = open(pathPSD) do file
 
@@ -196,14 +196,7 @@ end
 
 # function to check that the event have sense and the variable are ordered correnctly
 function _define_events(mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal)
-    #check the values are physical
-    # mc >0 and mc <1e12
-    # eta >0 and eta <=0.25
-    # dL >0 
-    # phi, psi, phiCoal in [0, 2pi]
-    # theta, iota in [0,pi]
-    # tcoal >0
-    # chi1, chi2 in [-1, 1]
+
     if mc <= 0 || mc >= 200
         error("Chirp mass out of range, mc = $mc")
     end
@@ -325,8 +318,6 @@ Fp, Fc = _patternFunction(0.1, 0.2, 0.3, 0.4, CE1Id_coordinates)
 ```
     
 """
-# See P. Jaranowski, A. Krolak, B. F. Schutz, PRD 58, 063001, eq. (10)--(13)
-
 function _patternFunction(
     theta::Union{Float64,ForwardDiff.Dual},
     phi::Union{Float64,ForwardDiff.Dual},
@@ -335,6 +326,7 @@ function _patternFunction(
     DetectorCoordinates::DetectorStructure;
     alpha_grad = 0.0,
 )
+# See P. Jaranowski, A. Krolak, B. F. Schutz, PRD 58, 063001, eq. (10)--(13)
 
     alpha_rad = alpha_grad * pi / 180.0
 
@@ -393,8 +385,8 @@ function _patternFunction(
         cos(dec) *
         sin(tmp)
 
-    aSum = @. a1 - a2 + a3 - a4 + a5   # eq (12) Jaranowski
-    bSum = @. b1 + b2 + b3 + b4        # eq (13) Jaranowski
+    aSum = @. a1 - a2 + a3 - a4 + a5   
+    bSum = @. b1 + b2 + b3 + b4        
 
 
     Fp =
@@ -444,7 +436,6 @@ Compute the amplitude of the GW signal projected on the detector tensor, given a
     Ap, Ac = AmplitudeDet(PhenomD(), 1:100, 10.0, 0.25, 0.5, 0.5, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5, CE1Id_coordinates)
     ```
 """
-
 function AmplitudeDet(model::Model,
     f::AbstractArray,
     mc::Union{Float64,ForwardDiff.Dual},
@@ -543,7 +534,6 @@ we need to compute the full hp and hc.
     Ap, Ac = AmplitudeDet(PhenomD(), 1:100, 10.0, 0.25, 0.5, 0.5, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5, CE1Id_coordinates)
     ```
 """
-
 function AmplitudeDet(
     model::PhenomHM,
     f::AbstractArray,
@@ -621,7 +611,6 @@ This function computes the phase of the waveform seen by the detector, given a w
     ```
 
 """
-
 function PhaseDet(
     model::Model,
     f::AbstractArray,
@@ -714,9 +703,6 @@ This function computes the full strain (complex) as a function of the parameters
 
 
 """
-
-#function Strain(mc, eta, dL, theta, phi, iota, psi, phiCoal, tcoal, chi1, chi2, Lambda1, Lambda2, ecc, QNMgrid_a, QNMgrid_fring, QNMgrid_fdamp; useEarthMotion=false, alpha=0.)
-# up to now ecc, Lambda1 and Lambda2 are not used, but it will be in the future
 function Strain(model::Model,
     f::AbstractArray,
     mc,
@@ -820,7 +806,6 @@ This function computes the full strain (complex) as a function of the parameters
 
 
 """
-
 function Strain(model::PhenomHM,
     f::AbstractArray,
     mc,
@@ -872,7 +857,7 @@ The SNR is computed as the square root of the integral of the signal-to-noise ra
 The integral is computed using the trapezoidal rule.
 This function is the main function to compute the SNR, then using multiple-dispatch this function is called when considering a network of detectors and more than a single event.
 
-SNR(model, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, detector, Lambda1=0.0, Lambda2=0.0; fmin=2.0, fmax=nothing, res=1000, compute2arms=true, useEarthMotion=false, ampl_precomputation=nothing)
+SNR(model, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, detector, Lambda1=0.0, Lambda2=0.0; fmin=2.0, fmax=nothing, res=1000, useEarthMotion=false, ampl_precomputation=nothing)
 
     #### Input arguments:
     -  `model` : structure, containing the waveform model
@@ -895,7 +880,6 @@ SNR(model, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, detector, Lamb
     -  `fmin` : float, default 2.0, minimum frequency
     -  `fmax` : float, default nothing, maximum frequency, otherwise the code takes fcut (from _fcut) as fmax
     -  `res` : int, default 1000, resolution of the frequency grid
-    -  `compute2arms` : bool, default true, if false the code computes the SNR for 3 arms in the case of triangular detectors, otherwise it computes the SNR for 2 arms and the third strain is obtained with geometrical considerations
     -  `useEarthMotion` : bool, default false, if true the Earth motion is considered during the measurement
     -  `ampl_precomputation` : array, default nothing, precomputed amplitude
 
@@ -907,8 +891,6 @@ SNR(model, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, detector, Lamb
     SNR = SNR(PhenomD(), 10.0, 0.25, 0.5, 0.5, 1.0, 0.1, 0.2, 0.3, 0.4, CE1Id)
     ```
 """
-
-
 function SNR(model::Model,
     mc::Float64,
     eta::Float64,
@@ -926,12 +908,9 @@ function SNR(model::Model,
     fmin=2.0,
     fmax = nothing,
     res = 1000,
-    compute2arms = true,
     useEarthMotion = false,
     ampl_precomputation = nothing,
 )
-
-
 
     
     if isnothing(fmax)
@@ -943,7 +922,7 @@ function SNR(model::Model,
 
 
     fgrid = 10 .^ (range(log10(fmin), log10(fcut), length = res))
-    # Out of the provided PSD range, we use a constant value of 1, which results in completely negligible contributions
+    # Out of the PSD range, we use a constant value of 1, which results in completely negligible contributions
     psdGrid = linear_interpolation(detector.fNoise, detector.psd, extrapolation_bc = 1.0)(fgrid)
     detectorCoordinates = DetectorCoordinates(
         detector.latitude_rad,
@@ -1007,87 +986,60 @@ function SNR(model::Model,
     elseif detector.shape == 'T'
         SNRsq_Tshape = zeros(3)
 
-        if compute2arms == false
-            print("Computing SNR for 3 arms\n")
-            for i = 1:3
-                Aps, Acs = AmplitudeDet(
-                    model,
-                    fgrid,
-                    mc,
-                    eta,
-                    chi1,
-                    chi2,
-                    dL,
-                    theta,
-                    phi,
-                    iota,
-                    psi,
-                    tcoal,
-                    detectorCoordinates,
-                    Lambda1,
-                    Lambda2,
-                    alpha = 60.0 * (i - 1),
-                    useEarthMotion = useEarthMotion,
-                    ampl_precomputation = ampl_precomputation
-                )
-                Atot = Aps .* Aps .+ Acs .* Acs
-                SNRsq_Tshape[i] = trapz(fgrid, Atot ./ psdGrid)
-            end
-            SNR = 2.0 * sqrt(sum(SNRsq_Tshape))
-        else
-            # The signal in 3 arms sums to zero for geometrical reasons, so we can use this to skip some calculations
+        
+        # The signal in 3 arms sums to zero for geometrical reasons, so we can use this to skip some calculations
 
-            Aps1, Acs1 = AmplitudeDet(
-                model,
-                fgrid,
-                mc,
-                eta,
-                chi1,
-                chi2,
-                dL,
-                theta,
-                phi,
-                iota,
-                psi,
-                tcoal,
-                detectorCoordinates,
-                Lambda1,
-                Lambda2,
-                alpha = 0.0,
-                useEarthMotion = useEarthMotion,
-                ampl_precomputation = ampl_precomputation
-            )
-            Atot1 = Aps1 .* Aps1 .+ Acs1 .* Acs1
-            Aps2, Acs2 = AmplitudeDet(
-                model,
-                fgrid,
-                mc,
-                eta,
-                chi1,
-                chi2,
-                dL,
-                theta,
-                phi,
-                iota,
-                psi,
-                tcoal,
-                detectorCoordinates,
-                Lambda1,
-                Lambda2,
-                alpha = 60.0,
-                useEarthMotion = useEarthMotion,
-                ampl_precomputation = ampl_precomputation
-            )
-            Atot2 = Aps2 .* Aps2 .+ Acs2 .* Acs2
-            Aps3, Acs3 = -(Aps1 .+ Aps2), -(Acs1 .+ Acs2)
-            Atot3 = Aps3 .* Aps3 .+ Acs3 .* Acs3
-            SNRsq_Tshape[1] = trapz(fgrid, Atot1 ./ psdGrid)
-            SNRsq_Tshape[2] = trapz(fgrid, Atot2 ./ psdGrid)
-            SNRsq_Tshape[3] = trapz(fgrid, Atot3 ./ psdGrid)
+        Aps1, Acs1 = AmplitudeDet(
+            model,
+            fgrid,
+            mc,
+            eta,
+            chi1,
+            chi2,
+            dL,
+            theta,
+            phi,
+            iota,
+            psi,
+            tcoal,
+            detectorCoordinates,
+            Lambda1,
+            Lambda2,
+            alpha = 0.0,
+            useEarthMotion = useEarthMotion,
+            ampl_precomputation = ampl_precomputation
+        )
+        Atot1 = Aps1 .* Aps1 .+ Acs1 .* Acs1
+        Aps2, Acs2 = AmplitudeDet(
+            model,
+            fgrid,
+            mc,
+            eta,
+            chi1,
+            chi2,
+            dL,
+            theta,
+            phi,
+            iota,
+            psi,
+            tcoal,
+            detectorCoordinates,
+            Lambda1,
+            Lambda2,
+            alpha = 60.0,
+            useEarthMotion = useEarthMotion,
+            ampl_precomputation = ampl_precomputation
+        )
+        Atot2 = Aps2 .* Aps2 .+ Acs2 .* Acs2
+        Aps3, Acs3 = -(Aps1 .+ Aps2), -(Acs1 .+ Acs2)
+        Atot3 = Aps3 .* Aps3 .+ Acs3 .* Acs3
+        SNRsq_Tshape[1] = trapz(fgrid, Atot1 ./ psdGrid)
+        SNRsq_Tshape[2] = trapz(fgrid, Atot2 ./ psdGrid)
+        SNRsq_Tshape[3] = trapz(fgrid, Atot3 ./ psdGrid)
 
 
-            SNR = 2.0 * sqrt(sum(SNRsq_Tshape)) # The factor of two arises by cutting the integral from 0 to infinity
-        end
+        SNR = 2.0 * sqrt(sum(SNRsq_Tshape)) # The factor of two arises by cutting the integral from 0 to infinity
+    
     end
 
     return SNR
@@ -1108,9 +1060,6 @@ where the dots indicate the parameters equal to the previous function call.
 ```
 
 """
-
-
-
 function SNR(model::Model,
     mc::Float64,
     eta::Float64,
@@ -1128,7 +1077,6 @@ function SNR(model::Model,
     fmin=2.0,
     fmax = nothing,
     res = 1000,
-    compute2arms = true,
     useEarthMotion = false,
     precomputation = true,
 )
@@ -1194,7 +1142,6 @@ function SNR(model::Model,
             fmin=fmin,
             fmax=fmax,
             res=res,
-            compute2arms=compute2arms,
             useEarthMotion = useEarthMotion,
             ampl_precomputation = ampl_precomputation
         )
@@ -1212,7 +1159,6 @@ It is possible to save the SNRs in a file, if the optional argument `auto_save` 
 if the default is left it saves BBH in the folder "output/BBH" and so on for each source type. The file is saved in the folder `output/name_folder/SNRs.h5` 
 and contains the SNRs for the events in the catalog. It contains also the parameters of the events if the optional argument `save_catalog` is set to true.
 """
-
 function SNR(model::Model,
     mc::AbstractArray,
     eta::AbstractArray,
@@ -1230,7 +1176,6 @@ function SNR(model::Model,
     fmin=2.0,
     fmax = nothing,
     res = 1000,
-    compute2arms = true,
     auto_save = false,
     name_folder = "BBH",
     save_catalog = false,
@@ -1258,7 +1203,7 @@ function SNR(model::Model,
 
     elapsed_time = @elapsed @showprogress desc="Computing SNRs..."  @threads for ii in 1:nEvents  
                     SNRs[ii]=SNR(model, mc[ii], eta[ii], chi1[ii], chi2[ii], dL[ii], theta[ii], phi[ii], iota[ii], psi[ii], tcoal[ii],
-                                        detector, Lambda1[ii], Lambda2[ii], fmin=fmin, fmax=fmax, res = res, compute2arms = compute2arms, useEarthMotion = useEarthMotion, precomputation = precomputation)
+                                        detector, Lambda1[ii], Lambda2[ii], fmin=fmin, fmax=fmax, res = res, useEarthMotion = useEarthMotion, precomputation = precomputation)
     end 
 
     println("SNRs computed!")
@@ -1316,7 +1261,7 @@ This function computes the Fisher Matrix for a single detector, given the parame
 To do the computation it uses the function FisherMatrix_internal(...) for L-shaped detectors and FisherMatrix_Tdetector(...) for T-shaped detectors.
 Thus it is a wrapper function that calls the correct function depending on the shape of the detector. More information on the Fisher Matrix computation can be found in the documentation of FisherMatrix_internal(...) and FisherMatrix_Tdetector(...).
 
-    FisherMatrix(model, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, detector, Lambda1=0.0, Lambda2=0.0, res=1000, useEarthMotion=false, alpha=0.0, rho_thres=12., fmin=2., fmax=nothing, compute2arms=true, coordinate_shift=true, return_SNR=false)
+    FisherMatrix(model, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, detector, Lambda1=0.0, Lambda2=0.0, res=1000, useEarthMotion=false, alpha=0.0, rho_thres=12., fmin=2., fmax=nothing, coordinate_shift=true, return_SNR=false)
 
     #### Input arguments:
     -  `model` : structure, containing the waveform model
@@ -1342,7 +1287,6 @@ Thus it is a wrapper function that calls the correct function depending on the s
     -  `rho_thres` : float, default 12., SNR threshold for the computation of the Fisher Matrix
     -  `fmin` : float, default 2.0, minimum frequency
     -  `fmax` : float, default nothing, maximum frequency, otherwise the code takes fcut (from _fcut) as fmax
-    -  `compute2arms` : bool, default true, valid for the calculation of the SNR, to calculate if the event is above threshold. If false the code computes the SNR for 3 arms in the case of triangular detectors, otherwise it computes the SNR for 2 arms and the third strain is obtained with geometrical considerations
     -  `coordinate_shift` : bool, default true, valid for T detectors, if true the codes shifts the coordinates of the detector from the center of the triangle to the center of the arms (more realistic scenario, recommended)
     -  `return_SNR` : bool, default false, if true the function returns the SNR of the event (skipping the need to call the SNR function)
 
@@ -1356,10 +1300,6 @@ Thus it is a wrapper function that calls the correct function depending on the s
 
 
 """
-
-#function that is used only to divide between L and T detectors
-
-
 function FisherMatrix(model::Model,
     mc::Float64,
     eta::Float64,
@@ -1381,10 +1321,10 @@ function FisherMatrix(model::Model,
     rho_thres = 12.,
     fmin=2.,
     fmax=nothing,
-    compute2arms = true,
     coordinate_shift = true,
     return_SNR = false,
 )
+    #function that is used only to divide between L and T detectors
 
     if detector.shape =='L'
 
@@ -1436,7 +1376,6 @@ function FisherMatrix(model::Model,
             alpha = alpha,
             fmin=fmin,
             fmax=fmax,
-            compute2arms = compute2arms,
             coordinate_shift=coordinate_shift,
             return_SNR = return_SNR,
         )
@@ -1671,8 +1610,6 @@ where the dots indicate the parameters equal to the previous function call.
 ```
 
 """
-
-
 function FisherMatrix(model::Model,
     mc::Float64,
     eta::Float64,
@@ -1694,7 +1631,6 @@ function FisherMatrix(model::Model,
     alpha = 0.0,
     fmin=2.0,
     fmax = nothing,
-    compute2arms = true,
     coordinate_shift = true,
     return_SNR = false,
 )
@@ -1728,7 +1664,6 @@ function FisherMatrix(model::Model,
             fmin = fmin,
             fmax = fmax,
             res = res,
-            compute2arms=compute2arms,
             useEarthMotion = useEarthMotion,
         )
         if SNRval < rho_thres
@@ -1793,7 +1728,6 @@ function FisherMatrix(model::Model,
                 alpha = alpha,
                 fmin=fmin,
                 fmax=fmax,
-                compute2arms = compute2arms,
                 coordinate_shift = coordinate_shift,
                 return_SNR=false,
             )
@@ -1812,7 +1746,6 @@ end
 """
 This is a helper function that computes the Fisher Matrix for a single detector with T shape. It is called by the function FisherMatrix and calls FisherMatrix_internal.
 """
-
 function FisherMatrix_Tdetector(model::Model,
     mc::Float64,
     eta::Float64,
@@ -1834,7 +1767,6 @@ function FisherMatrix_Tdetector(model::Model,
     alpha = 0.0,
     fmin=2.0,
     fmax = nothing,
-    compute2arms = true,
     REarth_km = uc.REarth_km,
     coordinate_shift = true,
     return_SNR = false,    
@@ -2001,7 +1933,7 @@ The main function of the code, it computes the Fisher Matrix for an array of eve
 SNRs if requested and saves the results (Fisher matrices and SNRs) in a file if the optional argument `auto_save` is set to true. The file is saved in the folder `output/name_folder/Fishers_SNRs.h5`
 
 
-    FisherMatrix(model, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, detector, Lambda1=0.0, Lambda2=0.0, res=1000, useEarthMotion=false, alpha=0.0, rho_thres=12., fmin=2., fmax=nothing, compute2arms=true, coordinate_shift=true, return_SNR=false)
+    FisherMatrix(model, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, detector, Lambda1=0.0, Lambda2=0.0, res=1000, useEarthMotion=false, alpha=0.0, rho_thres=12., fmin=2., fmax=nothing, coordinate_shift=true, return_SNR=false)
 
     #### Input arguments:
     -  `model` : structure, containing the waveform model
@@ -2027,7 +1959,6 @@ SNRs if requested and saves the results (Fisher matrices and SNRs) in a file if 
     -  `rho_thres` : float, default 12., SNR threshold for the computation of the Fisher Matrix
     -  `fmin` : float, default 2.0, minimum frequency
     -  `fmax` : float, default nothing, maximum frequency, otherwise the code takes fcut (from _fcut) as fmax
-    -  `compute2arms` : bool, default true, valid for the calculation of the SNR, to calculate if the event is above threshold. If false the code computes the SNR for 3 arms in the case of triangular detectors, otherwise it computes the SNR for 2 arms and the third strain is obtained with geometrical considerations
     -  `coordinate_shift` : bool, default true, valid for T detectors, if true the codes shifts the coordinates of the detector from the center of the triangle to the center of the arms (more realistic scenario, recommended)
     -  `return_SNR` : bool, default false, if true the function returns the SNR of the event (skipping the need to call the SNR function)
     -  `auto_save` : bool, default false, if true the function saves the results in a file
@@ -2043,8 +1974,6 @@ SNRs if requested and saves the results (Fisher matrices and SNRs) in a file if 
 
 
 """
-
-
 function FisherMatrix(model::Model,
     mc::AbstractArray,
     eta::AbstractArray,
@@ -2063,7 +1992,6 @@ function FisherMatrix(model::Model,
     fmin=2.0,
     fmax = nothing,
     res = 1000,
-    compute2arms = true,
     useEarthMotion = false,
     rho_thres=12.,
     alpha = 0.0,
@@ -2100,7 +2028,7 @@ function FisherMatrix(model::Model,
         SNRs = Array{Float64}(undef, nEvents)
         elapsed_time = @elapsed @showprogress desc="Computing Fishers and SNRs..." @threads for ii in 1:nEvents  
             Fishers[ii,:,:], SNRs[ii] = FisherMatrix(model, mc[ii], eta[ii], chi1[ii], chi2[ii], dL[ii], theta[ii], phi[ii], iota[ii], psi[ii], tcoal[ii], phiCoal[ii],
-                                detector, Lambda1[ii], Lambda2[ii], fmin=fmin, fmax=fmax, res = res, compute2arms = compute2arms, useEarthMotion = useEarthMotion, rho_thres=rho_thres, alpha = alpha, coordinate_shift = coordinate_shift, return_SNR=true)
+                                detector, Lambda1[ii], Lambda2[ii], fmin=fmin, fmax=fmax, res = res, useEarthMotion = useEarthMotion, rho_thres=rho_thres, alpha = alpha, coordinate_shift = coordinate_shift, return_SNR=true)
             end 
 
         println("Fisher matrices and SNRs computed!")
@@ -2153,7 +2081,7 @@ function FisherMatrix(model::Model,
     else
         elapsed_time = @elapsed  @showprogress desc="Computing Fishers..."  @threads for ii in 1:nEvents  
                     Fishers[ii,:,:]=FisherMatrix(model, mc[ii], eta[ii], chi1[ii], chi2[ii], dL[ii], theta[ii], phi[ii], iota[ii], psi[ii], tcoal[ii], phiCoal[ii],
-                                        detector, Lambda1[ii], Lambda2[ii], fmin=fmin, fmax=fmax, res = res, compute2arms = compute2arms, useEarthMotion = useEarthMotion, rho_thres=rho_thres, alpha = alpha, coordinate_shift = coordinate_shift)
+                                        detector, Lambda1[ii], Lambda2[ii], fmin=fmin, fmax=fmax, res = res, useEarthMotion = useEarthMotion, rho_thres=rho_thres, alpha = alpha, coordinate_shift = coordinate_shift)
                 end 
         println("Fisher matrices computed!")
         if elapsed_time > 60.0
