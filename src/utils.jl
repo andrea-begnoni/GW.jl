@@ -4,6 +4,7 @@ using ForwardDiff # these are the Julia packages that are used in this module
 using LinearAlgebra
 using LaTeXStrings
 
+
 export GMsun_over_c3, GMsun_over_c2, uGpc, GMsun_over_c2_Gpc, REarth_km, clight_kms, clightGpc, Lamt_delLam_from_Lam12, _ra_dec_from_theta_phi_rad, _theta_phi_from_ra_dec_rad, CovMatrix, Errors, SkyArea
 
 
@@ -118,7 +119,7 @@ If the Fisher matrix is made of zeros, it returns a zero matrix.
 ```
 
 """
-function CovMatrix(Fisher)
+function CovMatrix(Fisher::Matrix{Float64}, print_error = true)
     covMatrix = zeros(size(Fisher))  # Initialize covMatrix as a zero matrix of the same size as Fisher
 
     if Fisher[1,1]==0.
@@ -130,13 +131,28 @@ function CovMatrix(Fisher)
     try
         covMatrix = inv(cholesky(Fisher))
     catch
-        println("Fisher matrix is not positive definite. Returning zero matrix.")
+        if print_error == true
+            println("Fisher matrix is not positive definite. Returning zero matrix.")
+        end
     end
     covMatrix = covMatrix ./ sqrt.(diagonal * diagonal')
 
     return covMatrix
 end
 
+"""
+Same as CovMatrix(Fisher::Matrix{Float64}) but for a 3D array of Fisher matrices.
+"""
+function CovMatrix(Fisher::Array{Float64, 3}, print_error = false)
+    covMatrix = zeros(size(Fisher))  # Initialize covMatrix as a zero matrix of the same size as Fisher
+
+    n = size(Fisher)[1]
+    for i in 1:n
+        covMatrix[i,:,:] = CovMatrix(Fisher[i,:,:], print_error)
+    end
+    
+    return covMatrix
+end
 """
 Calculate the errors from the covariance matrix. The errors are the square root of the diagonal elements of the covariance matrix.
 
@@ -150,10 +166,25 @@ Calculate the errors from the covariance matrix. The errors are the square root 
 ```julia
     errors = Errors([1 0; 0 4]) # returns [1.0, 2.0]
 """
-function Errors(covMatrix)
+function Errors(covMatrix::Matrix{Float64})
     return sqrt.(diag(covMatrix))
 end
 
+"""
+Same as Errors(covMatrix::Matrix{Float64}) but for a 3D array of covariance matrices.
+"""
+function Errors(covMatrix::Array{Float64, 3})
+    
+    nCov = size(covMatrix)[1]
+    nPar = size(covMatrix)[2]
+    errors = zeros(nCov, nPar)
+
+    for ii in 1:nCov
+        errors[ii,:] = sqrt.(diag(covMatrix[ii,:,:]))
+    end
+
+    return errors
+end
 
 """
 Calculate the sky area from the covariance matrix and the catalog of sources. The sky area is the area of the error ellipse in the sky, in square degrees.
@@ -173,7 +204,7 @@ Calculate the sky area from the covariance matrix and the catalog of sources. Th
     covMatrix = Matrix{Float64}(I, 11,11)
     sky_area = SkyArea(covMatrix, 0.1) 
 """
-function SkyArea(covMatrix, thetaCatalog; percent_level = 90)
+function SkyArea(covMatrix::Matrix{Float64}, thetaCatalog; percent_level = 90)
     # take phi and theta from covMatrix and multiply them
 
     sigmaTheta_sq  = covMatrix[6,6]
@@ -185,5 +216,16 @@ function SkyArea(covMatrix, thetaCatalog; percent_level = 90)
     return - 2*pi*sqrt(sigmaTheta_sq*sigmaPhi_sq - sigmaThetaPhi^2)*abs(sin(thetaCatalog))*log(1-percent_level/100)*(180/pi)^2
 end
 
+function SkyArea(covMatrix::Array{Float64,3}, thetaCatalog::Array; percent_level = 90)
+    
+    nCov = size(covMatrix)[1]
+    skyArea = zeros(nCov)
+
+    for ii in 1:nCov
+        skyArea[ii] = SkyArea(covMatrix[ii,:,:], thetaCatalog[ii], percent_level=percent_level)
+    end
+
+    return skyArea
+end
 
 end

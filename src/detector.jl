@@ -17,6 +17,7 @@ using ProgressMeter
 using Base.Threads
 using Dates
 
+
 export DetectorStructure, DetectorCoordinates, Detector, _readASD, _readPSD, getCoords, CE1Id_coordinates, CE1Id, CE2NM_coordinates,
          CE2NM, CE2NSW_coordinates, CE2NSW, ETS_coodinates, ETS, ETLS_coodinates, ETLS, ETMR_coordinates, ETMR, ETLMR_coordinates, ETLMR, 
          LIGO_L_coordinates, LIGO_L, LIGO_H_coordinates, LIGO_H, VIRGO_coordinates, VIRGO, KAGRA_coordinates, KAGRA, _available_detectors,
@@ -2149,8 +2150,7 @@ This function reads the Fisher matrices and/or the SNRs
     ```
 
 """
-# read SNRs and Fishers
-function _read_Fishers_SNRs(path, SNR=true)
+function _read_Fishers_SNRs(path; SNR=true)
     if SNR == true
         Fishers, SNRs = h5open(path, "r") do file
             println("Attributes: ", keys(attributes(file)))
