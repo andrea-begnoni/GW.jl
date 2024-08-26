@@ -14,7 +14,7 @@ using ForwardDiff
 
 export TaylorF2, PhenomD, PhenomD_NRTidal, PhenomHM, PhenomNSBH, PhenomXAS, Model
 
-export Ampl, Phi, _available_waveforms, _fcut, _finalspin, _radiatednrg, _tau_star, hphc
+export Ampl, Phi, _npar, _event_type, _available_waveforms, _fcut, _finalspin, _radiatednrg, _tau_star, hphc
 # Define an abstract type for the models
 abstract type Model end
 
@@ -53,6 +53,16 @@ function Phi(
 )
     # Implementation specific to each model
     error("Phi not implemented for model: $(typeof(model)), or there is an error with the number of input parameters")
+end
+
+function _npar(model::Model)
+    # Implementation specific to each model
+    error("_npar not implemented for model: $(typeof(model)), or there is an error with the number of input parameters")
+end
+
+function _event_type(model::Model) 
+   # Implementation specific to each model
+   error("_event_type not implemented for model: $(typeof(model)), or there is an error with the number of input parameters")
 end
 
 # Define concrete types for each model
@@ -182,6 +192,19 @@ end
 # TAYLORF2 WAVEFORM
 ####################################################
 
+"""
+Returns the number of parameter of a struct<:Model as integer number. 
+"""
+function _npar(model::TaylorF2)
+    return 11
+end
+
+"""
+Returns the event_type of a struct<:Model as a string.
+"""
+function _event_type(model::TaylorF2)
+    return "BBH"
+end
 
 """
 Compute the phase of the GW as a function of frequency, given the events parameters.
@@ -414,6 +437,20 @@ end
 #############################################################
 # IMRPhenomD WAVEFORM
 #############################################################
+
+"""
+Returns the number of parameter of a struct<:Model as integer number. 
+"""
+function _npar(model::PhenomD)
+    return 11
+end
+
+"""
+Returns the event_type of a struct<:Model as a string.
+"""
+function _event_type(model::PhenomD)
+    return "BBH"
+end
 
 function _readQNMgrid_a(pathWF::String)
     return readdlm(pathWF * "QNMData_a.txt")[:, 1]   # [:,1] is to make it a 1D array instead of a 2D array
@@ -1797,6 +1834,21 @@ end
 # All is taken from LALSimulation and arXiv:1508.07250, arXiv:1508.07253, arXiv:1905.06011
 
 """
+Returns the number of parameter of a struct<:Model as integer number. 
+"""
+function _npar(model::PhenomD_NRTidal)
+    return 13
+end
+
+"""
+Returns the event_type of a struct<:Model as a string.
+"""
+function _event_type(model::PhenomD_NRTidal)
+    return "BNS"
+end
+
+
+"""
 Compute the phase of the GW as a function of frequency, given the events parameters.
 
     Phi(PhenomD_NRTidal(), f, mc, eta, chi1, chi2)
@@ -2506,6 +2558,22 @@ end
 ####################################################
 #   IMRPHENOM_HM WAVEFORM
 ####################################################
+
+"""
+Returns the number of parameter of a struct<:Model as integer number. 
+"""
+function _npar(model::PhenomHM)
+    return 11
+end
+
+"""
+Returns the event_type of a struct<:Model as a string.
+"""
+function _event_type(model::PhenomHM)
+    return "BBH"
+end
+
+
 """
 Compute the phase of the GW as a function of frequency, given the events parameters.
 
@@ -5561,6 +5629,20 @@ end
 # IMRPhenomNSBH WAVEFORM
 #######################################################
 """
+Returns the number of parameter of a struct<:Model as integer number. 
+"""
+function _npar(model::PhenomNSBH)
+    return 12
+end
+
+"""
+Returns the event_type of a struct<:Model as a string.
+"""
+function _event_type(model::PhenomNSBH)
+    return "NSBH"
+end
+
+"""
 IMRPhenomNSBH waveform model
 
 The inputs labelled as 1 refer to the BH 
@@ -6396,6 +6478,20 @@ end
 #######################################################
 # IMRPhenomXAS WAVEFORM
 #######################################################
+
+"""
+Returns the number of parameter of a struct<:Model as integer number. 
+"""
+function _npar(model::PhenomXAS)
+    return 13
+end
+
+"""
+Returns the event_type of a struct<:Model as a string.
+"""
+function _event_type(model::PhenomXAS)
+    return "BNS"
+end
 
 """
 Compute the phase of the GW as a function of frequency, given the events parameters.

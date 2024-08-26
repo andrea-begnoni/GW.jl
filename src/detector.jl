@@ -1416,13 +1416,7 @@ function FisherMatrix_internal(model::Model,
     return_SNR = false,
 )
 
-    if typeof(model) == PhenomD || typeof(model) == PhenomHM || typeof(model) == TaylorF2
-        nPar = 11
-    elseif typeof(model) == PhenomD_NRTidal
-        nPar = 13
-    elseif typeof(model) == PhenomNSBH
-        nPar = 12
-    end
+    nPar = _npar(model)
 
     if isnothing(fmax)
         fcut = waveform._fcut(model, mc, eta, Lambda1, Lambda2)
@@ -1638,13 +1632,7 @@ function FisherMatrix(model::Model,
 
     # compute SNR and procede only if it is above the threshold
 
-    if typeof(model) == PhenomD || typeof(model) == PhenomHM || typeof(model) == TaylorF2
-        nPar = 11
-    elseif typeof(model) == PhenomD_NRTidal
-        nPar = 13
-    elseif typeof(model) == PhenomNSBH
-        nPar = 12
-    end
+    nPar = _npar(model)
 
     if rho_thres !==nothing
         SNRval = SNR(
@@ -1775,13 +1763,7 @@ function FisherMatrix_Tdetector(model::Model,
 
     if rho_thres !==nothing
 
-        if typeof(model) == PhenomD || typeof(model) == PhenomHM || typeof(model) == TaylorF2
-            nPar = 11
-        elseif typeof(model) == PhenomD_NRTidal
-            nPar = 13
-        elseif typeof(model) == PhenomNSBH
-            nPar = 12
-        end
+        nPar = _npar(model)
 
         SNRval = SNR(
             model,
@@ -1999,30 +1981,14 @@ function FisherMatrix(model::Model,
     coordinate_shift = true,
     return_SNR = false,
     auto_save =false,
-    name_folder = "BBH",
+    name_folder = nothing,
     save_catalog = false,
 )
     nEvents = length(mc)
-
-    if typeof(model) == PhenomD || typeof(model) == PhenomHM || typeof(model) == TaylorF2
-        Lambda1 = zeros(nEvents)
-        Lambda2 = zeros(nEvents)
-        nPar = 11
-
-    elseif typeof(model) == PhenomNSBH
-        Lambda2 = zeros(nEvents)
-        nPar = 12
-        if name_folder == "BBH"
-            name_folder = "NSBH"
-        end
-    else
-        nPar = 13
-        if name_folder == "BBH"
-            name_folder = "BNS"
-        end
-
+    nPar = _npar(model)
+    if name_folder == nothing
+        name_folder = _event_type(model) 
     end
-    
 
     Fishers = Array{Float64}(undef, nEvents, nPar, nPar)
     if return_SNR == true
