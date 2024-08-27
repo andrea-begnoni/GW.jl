@@ -4,3 +4,6 @@ catalogs/
 Fishers/
 test.ipynb
 test/runtest.ipynb
+
+*jpmod
+*.ipynb_checkpoints/
