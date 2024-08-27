@@ -103,8 +103,8 @@ function Phi(model::PhenomD,
     # Get the path to the directory of this file
     PACKAGE_DIR = @__DIR__
 
-    # Go one step back in the path (from ""GW.jl/src" to "GW.jl")
-    PARENT_DIR = dirname(PACKAGE_DIR)
+    # Go two steps back in the path (from ""GW.jl/src/waveform_models" to "GW.jl")
+    PARENT_DIR = dirname(dirname(PACKAGE_DIR))
     
     # Construct the path to the "useful_files" folder from the parent directory
     USEFUL_FILES_DIR = joinpath(PARENT_DIR, "useful_files/WFfiles/")
@@ -670,8 +670,8 @@ function Ampl(model::PhenomD,
     # Get the path to the directory of this file
     PACKAGE_DIR = @__DIR__
 
-    # Go one step back in the path (from ""GW.jl/src" to "GW.jl")
-    PARENT_DIR = dirname(PACKAGE_DIR)
+    # Go two steps back in the path (from ""GW.jl/src/waveform_models" to "GW.jl")
+    PARENT_DIR = dirname(dirname(PACKAGE_DIR))
     
     # Construct the path to the "useful_files" folder from the parent directory
     USEFUL_FILES_DIR = joinpath(PARENT_DIR, "useful_files/WFfiles/")
