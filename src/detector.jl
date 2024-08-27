@@ -1186,7 +1186,7 @@ function SNR(model::Model,
     nEvents = length(mc)
     SNRs = Vector{Float64}(undef, nEvents)
 
-    if typeof(model) == PhenomD || typeof(model) == PhenomHM || typeof(model) == TaylorF2
+    if typeof(model) == PhenomD || typeof(model) == PhenomHM || typeof(model) == TaylorF2 || typeof(model) == PhenomXAS
         Lambda1 = zeros(nEvents)
         Lambda2 = zeros(nEvents)
 
@@ -1470,7 +1470,7 @@ function FisherMatrix_internal(model::Model,
     ###########  Derivatives of the strain w.r.t. each parameter
     strainAutoDiff_real = Matrix{Float64}(undef, res, nPar)
     strainAutoDiff_imag = Matrix{Float64}(undef, res, nPar)
-    if typeof(model) == PhenomD || typeof(model) == PhenomHM || typeof(model) == TaylorF2
+    if typeof(model) == PhenomD || typeof(model) == PhenomHM || typeof(model) == TaylorF2 || typeof(model) == PhenomXAS
 
         strainAutoDiff_real = ForwardDiff.jacobian(
         x -> real(

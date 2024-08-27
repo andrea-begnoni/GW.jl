@@ -10,6 +10,7 @@ import ..UtilsAndConstants as uc
 using DelimitedFiles
 using Interpolations
 using ForwardDiff
+using Roots
 
 
 export TaylorF2, PhenomD, PhenomD_NRTidal, PhenomHM, PhenomNSBH, PhenomXAS, Model
@@ -6483,14 +6484,37 @@ end
 Returns the number of parameter of a struct<:Model as integer number. 
 """
 function _npar(model::PhenomXAS)
-    return 13
+    return 11
 end
 
 """
 Returns the event_type of a struct<:Model as a string.
 """
 function _event_type(model::PhenomXAS)
-    return "BNS"
+    return "BBH"
+end
+
+""" helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
+"""
+function Phi(model::PhenomXAS,
+    f,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    Lambda1,
+    Lambda2,
+    fInsJoin_PHI = 0.018,
+    fcutPar = 0.2,
+    GMsun_over_c3 = uc.GMsun_over_c3,
+)
+    # raise error if Lambda1 or Lambda2 are different from zero
+    # if Lambda1 != 0.0 || Lambda2 != 0.0
+    #     println("You requested Lambda1 and/or Lambda2 different from zero")
+    #     println("Tidal parameters Lambda1 and Lambda2 are not supported in PhenomD")
+    #     println("The code put them to zero")
+    # end
+    return Phi(model, f, mc, eta, chi1, chi2, fInsJoin_PHI=fInsJoin_PHI, fcutPar=fcutPar, GMsun_over_c3=GMsun_over_c3)
 end
 
 """
@@ -6998,6 +7022,26 @@ function Phi(model::PhenomXAS,
     phis    = @. etaInv*_completePhase(fgrid) + ifelse(fgrid <= fcutPar, linb*fgrid + lina + phifRef, 0.)
     
     return phis
+end
+
+""" helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
+"""
+function Ampl(model::PhenomXAS,
+    f,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    Lambda1,
+    Lambda2;
+    fcutPar = 0.3,
+    IntAmpVersion=104,
+    GMsun_over_c3 = uc.GMsun_over_c3,
+    GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc,
+)
+
+    return Ampl(model, f, mc, eta, chi1, chi2, dL, fcutPar=fcutPar, IntAmpVersion=IntAmpVersion, GMsun_over_c3=GMsun_over_c3, GMsun_over_c2_Gpc=GMsun_over_c2_Gpc)
 end
 
 """

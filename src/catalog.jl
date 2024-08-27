@@ -10,7 +10,7 @@ using HDF5
 using Random
 using Dates
 
-export GenerateCatalog, ReadCatalog # these are the functions that will be exported from this module
+export GenerateCatalog, ReadCatalog, get_dL # these are the functions that will be exported from this module
 
 """
 Hubble constant as a function of redshift, results in km/s 1/Mpc
@@ -853,6 +853,7 @@ Read the catalog generated with the function GenerateCatalog.
 
 #### Optional arguments:
 -  `folder` : string, folder where the catalog is stored.
+-  `redshift` : bool, if true, the redshift is read from the catalog.
 
 #### Outputs:
 -  `mc` : array of floats, chirp mass in the detector frame.
@@ -868,12 +869,13 @@ Read the catalog generated with the function GenerateCatalog.
 -  `phiCoal` : array of floats, coalescence phase in radians.
 -  `Lambda1` : array of floats, tidal deformability of object 1.
 -  `Lambda2` : array of floats, tidal deformability of object 2.
+-  `z` : array of floats, redshift, returned only if redshift = true.
 
 """
-function ReadCatalog(name_file; folder= "catalogs/")
+function ReadCatalog(name_file; folder= "catalogs/", redshift = false)
 
     
-    mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1, Lambda2 = h5open(folder*name_file, "r") do file
+    mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1, Lambda2, z = h5open(folder*name_file, "r") do file
         ### see attributes
         println("Attributes: ", keys(attributes(file)))
         attributes_keys = keys(attributes(file))
@@ -900,17 +902,25 @@ function ReadCatalog(name_file; folder= "catalogs/")
         mc = read(file, "mc")
         eta = read(file, "eta")
         dL = read(file, "dL")
-        #z = read(file, "z")
+        if redshift == true
+            z = read(file, "z")
+        else
+            z = zeros(nEvents)
+        end
         theta = read(file, "theta")
         phi = read(file, "phi")
         iota = read(file, "iota")
         psi = read(file, "psi")
         phiCoal = read(file, "phiCoal")
         tcoal = read(file, "tcoal")
-        return     mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1, Lambda2
+        return     mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1, Lambda2, z
 
     end
-    return mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1, Lambda2
+    if redshift == true
+        return mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1, Lambda2, z
+    else 
+        return mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1, Lambda2
+    end
 end
 
 

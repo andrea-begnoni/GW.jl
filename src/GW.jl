@@ -31,7 +31,7 @@ using .catalog
 
 # export from waveform.jl
 export Ampl, Phi, _available_waveforms, _fcut, _finalspin, _radiatednrg, _tau_star, hphc
-export TaylorF2, PhenomD, PhenomD_NRTidal, PhenomHM, PhenomNSBH, Model
+export TaylorF2, PhenomD, PhenomD_NRTidal, PhenomHM, PhenomNSBH, PhenomXAS, Model
 
 
 # export from detector.jl
@@ -41,7 +41,7 @@ export DetectorStructure, DetectorCoordinates, Detector, _readASD, _readPSD, get
           _define_events, _deltLoc, _patternFunction, AmplitudeDet, PhaseDet, Strain, SNR, FisherMatrix, _read_Fishers_SNRs
 
 # export from catalog.jl
-export GenerateCatalog, ReadCatalog
+export GenerateCatalog, ReadCatalog, get_dL
 
 # export from utils.jl
 export GMsun_over_c3, GMsun_over_c2, uGpc, GMsun_over_c2_Gpc, REarth_km, clight_kms, clightGpc, Lamt_delLam_from_Lam12, _ra_dec_from_theta_phi_rad, _theta_phi_from_ra_dec_rad, CovMatrix, Errors, SkyArea
