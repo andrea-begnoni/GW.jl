@@ -1,7 +1,91 @@
-
 #######################################################
 # IMRPhenomXAS WAVEFORM
 #######################################################
+
+"""
+Returns a dictionary with all contributions to the GW, devided in polarizations, as 
+a function of frequency, given the events parameters.  
+
+    Pol(PhenomXAS(), mc, eta, chi1, chi2, dL)
+
+#### Input arguments
+-  `model`   : Model type, it indicates the waveform model to be used.
+-  `f`       : frequency of the GW signal, Hz
+-  `mc`      : chirp mass, solar masses
+-  `eta`     : symmetric mass ratio
+-  `chi1`    : dimensionless spin component of the first BH
+-  `chi2`    : dimensionless spin component of the second BH
+-  `dL`      : luminosity distance, Gpc
+
+#### Return:
+-  Dict{String, Union{Array{Float64}, Array{ForwardDiff.Dual}}} with two entries "plus" and "cross". 
+   Each entry represents a polarization of the gravitational wave, according to the handed event parameters.
+   The length of each array is the length of the input `f`.
+
+#### Example:
+    f = [10.0, 20.0, 30.0, 40.0, 50.0]
+    pol = Pol(PhenomXAS(), f, 10., 0.20, 0.1, 0.2, 10.)
+    hp = pol["plus"]
+    hc = pol["cross"]
+"""
+function Pol(
+    model::PhenomXAS,
+    f::Array{Float64},
+    mc::Union{Float64,ForwardDiff.Dual},
+    eta::Union{Float64,ForwardDiff.Dual},
+    chi1::Union{Float64,ForwardDiff.Dual},
+    chi2::Union{Float64,ForwardDiff.Dual},
+    dL::Union{Float64,ForwardDiff.Dual},
+    Lambda1::Union{Float64,ForwardDiff.Dual}=0.,
+    Lambda2::Union{Float64,ForwardDiff.Dual}=0.; 
+    fcutPar = 0.3,
+    IntAmpVersion=104,
+    GMsun_over_c3 = uc.GMsun_over_c3,
+    GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc,
+    fInsJoin_PHI = 0.018,
+    InsPhaseVersion=104,
+    IntPhaseVersion=105
+)
+
+    phi = Phi(
+        model,
+        f,
+        mc,
+        eta,
+        chi1,
+        chi2,
+        fcutPar = fcutPar,
+        GMsun_over_c3 = GMsun_over_c3,
+        fInsJoin_PHI = fInsJoin_PHI,
+        InsPhaseVersion=InsPhaseVersion,
+        IntPhaseVersion=IntPhaseVersion
+    )
+
+    amp = Ampl(
+        model,
+        f,
+        mc,
+        eta,
+        chi1,
+        chi2,
+        dL,
+        fcutPar = fcutPar,
+        IntAmpVersion=IntAmpVersion,
+        GMsun_over_c3 = GMsun_over_c3,
+        GMsun_over_c2_Gpc = GMsun_over_c2_Gpc
+
+    )    
+
+    # complex wave polarizations (i.e. amplitude and phase information)
+    hp = amp .* exp.(1im .* phi)
+    hc = 1im .* amp .* exp.(1im .* phi)
+
+    return Dict(
+        "plus"  => hp,
+        "cross" => hc
+    )
+    
+end
 
 """
 Returns the number of parameter of a struct<:Model as integer number. 

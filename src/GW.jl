@@ -30,7 +30,7 @@ using .detector
 using .catalog
 
 # export from waveform.jl
-export Ampl, Phi, _available_waveforms, _fcut, _finalspin, _radiatednrg, _tau_star, hphc
+export Ampl, Phi, Pol, _available_waveforms, _fcut, _finalspin, _radiatednrg, _tau_star, hphc
 export TaylorF2, PhenomD, PhenomD_NRTidal, PhenomHM, PhenomNSBH, PhenomXAS, Model
 
 

@@ -14,7 +14,7 @@ using Roots
 
 export TaylorF2, PhenomD, PhenomD_NRTidal, PhenomHM, PhenomNSBH, PhenomXAS, Model
 
-export Ampl, Phi, _npar, _event_type, _available_waveforms, _fcut, _finalspin, _radiatednrg, _tau_star, hphc
+export Ampl, Phi, Pol, _npar, _event_type, _available_waveforms, _fcut, _finalspin, _radiatednrg, _tau_star, hphc
 
 # Define an abstract type for the models
 abstract type Model end
@@ -35,7 +35,7 @@ function Ampl(
     fcutPar = 0.2,
     fInsJoin_Ampl = 0.014,
     GMsun_over_c3 = uc.GMsun_over_c3,
-    GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc,
+    GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc
 )
     # Implementation specific to each model
     error("Ampl not implemented for model: $(typeof(model)), or there is an error with the number of input parameters")
@@ -53,7 +53,21 @@ function Phi(
     fcutPar = 0.2,
     fInsJoin_PHI = 0.018,
     GMsun_over_c3 = uc.GMsun_over_c3,
-    GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc,
+    GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc
+)
+    # Implementation specific to each model
+    error("Phi not implemented for model: $(typeof(model)), or there is an error with the number of input parameters")
+end
+
+# Define a function to give an error message if the model is not implemented
+function Pol(
+        model::Model,
+        f,
+        mc,
+        eta,
+        chi1,
+        chi2,
+        dL
 )
     # Implementation specific to each model
     error("Phi not implemented for model: $(typeof(model)), or there is an error with the number of input parameters")

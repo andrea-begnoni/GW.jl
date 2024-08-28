@@ -1,6 +1,88 @@
 #######################################################
 # IMRPhenomNSBH WAVEFORM
 #######################################################
+
+"""
+Returns a dictionary with all contributions to the GW, devided in polarizations, as 
+a function of frequency, given the events parameters.  
+
+    Pol(PhenomNSBH(), mc, eta, chi1, chi2, dL)
+
+#### Input arguments
+-  `model`   : Model type, it indicates the waveform model to be used.
+-  `f`       : frequency of the GW signal, Hz
+-  `mc`      : chirp mass, solar masses
+-  `eta`     : symmetric mass ratio
+-  `chi1`    : dimensionless spin component of the NS
+-  `chi2`    : dimensionless spin component of the BH
+-  `dL`      : luminosity distance, Gpc
+-  `Lambda`  : Dimensionless tidal deformability of the NS.
+
+#### Return:
+-  Dict{String, Union{Array{Float64}, Array{ForwardDiff.Dual}}} with two entries "plus" and "cross". 
+   Each entry represents a polarization of the gravitational wave, according to the handed event parameters.
+   The length of each array is the length of the input `f`.
+   
+#### Example:
+    f = [10.0, 20.0, 30.0, 40.0, 50.0]
+    pol = Pol(PhenomNSBH(), f, 10., 0.20, 0.1, 0., 10., 300.)
+    hp = pol["plus"]
+    hc = pol["cross"]
+"""
+function Pol(
+    model::PhenomNSBH,
+    f::Array{Float64},
+    mc::Union{Float64,ForwardDiff.Dual},
+    eta::Union{Float64,ForwardDiff.Dual},
+    chi1::Union{Float64,ForwardDiff.Dual},
+    chi2::Union{Float64,ForwardDiff.Dual},
+    dL::Union{Float64,ForwardDiff.Dual},
+    Lambda::Union{Float64,ForwardDiff.Dual},
+    Lambda2::Union{Float64,ForwardDiff.Dual}=0.; 
+    fInsJoin = 0.018,
+    fcutPar = 0.2,
+    GMsun_over_c3 = uc.GMsun_over_c3,
+    GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc
+)
+
+    phi = Phi(
+        model,
+        f,
+        mc,
+        eta,
+        chi1,
+        chi2, # tuned only for chi2 = 0
+        Lambda,
+        fInsJoin = fInsJoin,
+        fcutPar = fcutPar,
+        GMsun_over_c3 = GMsun_over_c3,
+    )
+
+    amp = Ampl(
+        model,
+        f,
+        mc,
+        eta,
+        chi1,
+        chi2, # assumed to be chi2=0
+        dL,
+        Lambda,
+        fcutPar = fcutPar,
+        GMsun_over_c3 =GMsun_over_c3,
+        GMsun_over_c2_Gpc = GMsun_over_c2_Gpc,
+    )
+
+    # complex wave polarizations (i.e. amplitude and phase information)
+    hp = amp .* exp.(1im .* phi)
+    hc = 1im .* amp .* exp.(1im .* phi)
+
+    return Dict(
+        "plus"  => hp,
+        "cross" => hc
+    )
+    
+end
+
 """
 Returns the number of parameter of a struct<:Model as integer number. 
 """
