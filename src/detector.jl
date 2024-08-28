@@ -1488,103 +1488,37 @@ function FisherMatrix_internal(model::Model,
     ###########  Derivatives of the strain w.r.t. each parameter
     strainAutoDiff_real = Matrix{Float64}(undef, res, nPar)
     strainAutoDiff_imag = Matrix{Float64}(undef, res, nPar)
-    if typeof(model) == PhenomD || typeof(model) == PhenomHM || typeof(model) == TaylorF2 || typeof(model) == PhenomXAS
-
-        strainAutoDiff_real = ForwardDiff.jacobian(
+    
+    event_parameter = [mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1, Lambda2]
+    event_parameter = event_parameter[1:nPar] # cut off non-required parameter,  
+    strainAutoDiff_real = ForwardDiff.jacobian(
         x -> real(
             Strain(
                 model,
                 detectorCoordinates,
                 fgrid,
-                x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11],
+                x... ,
                 alpha = alpha,
                 useEarthMotion = useEarthMotion
             ),
         ),
-        [mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal],
-        )
-        strainAutoDiff_imag = ForwardDiff.jacobian(
-            x -> imag(
-                Strain(
-                    model,
-                    detectorCoordinates,
-                    fgrid,
-                    x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11],
-                    alpha = alpha,
-                    useEarthMotion = useEarthMotion,
-                ),
+        event_parameter,
+    )
+    strainAutoDiff_imag = ForwardDiff.jacobian(
+        x -> imag(
+            Strain(
+                model,
+                detectorCoordinates,
+                fgrid,
+                x... ,
+                alpha = alpha,
+                useEarthMotion = useEarthMotion,
             ),
-            [mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal],
-        )
+        ),
+        event_parameter,
+    )
 
-    elseif typeof(model) == PhenomD_NRTidal
-            strainAutoDiff_real = ForwardDiff.jacobian(
-            x -> real(
-                Strain(
-                    model,
-                    detectorCoordinates,
-                    fgrid,
-                    x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11],
-                    x[12], x[13],
-                    alpha = alpha,
-                    useEarthMotion = useEarthMotion,
-                ),
-            ),
-            [mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1, Lambda2],
-            )
-            strainAutoDiff_imag = ForwardDiff.jacobian(
-                x -> imag(
-                    Strain(
-                        model,
-                        detectorCoordinates,
-                        fgrid,
-                        x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11],
-                        x[12], x[13],
-                        alpha = alpha,
-                        useEarthMotion = useEarthMotion,
-                    ),
-                ),
-                [mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1, Lambda2],
-            )
-            # It can happen that a certain frequency gives a Nan value, in this case we set the derivative to zero,
-            # this happens less than one time per event and usually at the end of the frequency grid.
-            strainAutoDiff_real[isnan.(strainAutoDiff_real)] .= 0.0
-            strainAutoDiff_imag[isnan.(strainAutoDiff_imag)] .= 0.0
-
-    elseif typeof(model) == PhenomNSBH
-        #Lambda = Lambda1 # exist only one Lambda
-        strainAutoDiff_real = ForwardDiff.jacobian(
-            x -> real(
-                Strain(
-                    model,
-                    detectorCoordinates,
-                    fgrid,
-                    x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11],
-                    x[12],
-                    alpha = alpha,
-                    useEarthMotion = useEarthMotion,
-                ),
-            ),
-            [mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1],
-            )
-            strainAutoDiff_imag = ForwardDiff.jacobian(
-                x -> imag(
-                    Strain(
-                        model,
-                        detectorCoordinates,
-                        fgrid,
-                        x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11],
-                        x[12],
-                        alpha = alpha,
-                        useEarthMotion = useEarthMotion,
-                    ),
-                ),
-                [mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1],
-            )
-    end 
     ######### end of derivatives
-    
-
     jacobian = Matrix{ComplexF64}(undef, nPar, res)
     for ii in 1:nPar
         jacobian[ii, :] = strainAutoDiff_real[:, ii] + 1im * strainAutoDiff_imag[:, ii]
