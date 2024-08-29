@@ -22,10 +22,10 @@ using Test
     CE_2 = CE2NM
     ET = ETS
     network = [CE_1, CE_2, ET];
-    snrD_network = SNR(PhenomD(), mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal,  network) 
+    snrD_network = SNR(PhenomD(), network, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal) 
     @test isapprox(snrD_network, 37.69523553190364, rtol = 1e-12 )             
 
-    snrHM_network = SNR(PhenomHM(), mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal,  network)
+    snrHM_network = SNR(PhenomHM(), network, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal)
     @test isapprox(snrHM_network, 37.92175372990184, rtol = 1e-12 )
 
     fisherD_network = FisherMatrix(
