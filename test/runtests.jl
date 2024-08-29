@@ -29,7 +29,7 @@ using Test
     @test isapprox(snrHM_network, 37.92175372990184, rtol = 1e-12 )
 
     fisherD_network = FisherMatrix(
-    PhenomD(), mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, network, coordinate_shift=false)
+    PhenomD(), network, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, coordinate_shift=false)
     cov = CovMatrix(fisherD_network)
     errors = Errors(cov)
 
@@ -49,7 +49,7 @@ using Test
 
 
     fisherHM_network = FisherMatrix(
-        PhenomHM(), mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, network, coordinate_shift=false)
+        PhenomHM(), network, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, coordinate_shift=false)
     covHM = CovMatrix(fisherHM_network)
     errorsHM = Errors(covHM)
 
