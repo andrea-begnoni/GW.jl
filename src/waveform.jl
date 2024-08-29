@@ -84,7 +84,10 @@ function _available_waveforms()
 end
 
 
-@doc "Function to check the available waveforms and return the corresponding model."
+#@doc "Function to check the available waveforms and return the corresponding model."
+"""
+Function to check the available waveforms and return the corresponding model.
+"""
 function _available_waveforms(waveform::String)
 
     if waveform == "TaylorF2"
