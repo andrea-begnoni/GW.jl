@@ -124,28 +124,28 @@ PACKAGE_DIR = @__DIR__
 PARENT_DIR = dirname(PACKAGE_DIR)
 
 # Construct the path to the "useful_files" folder from the parent directory
-PSDS_DIR = joinpath(PARENT_DIR, "useful_files/psds/")
+PSDS_DIR = joinpath(PARENT_DIR, "useful_files/")
 
 CE1Id_coordinates=detector.DetectorCoordinates(43.827 * pi/180, -112.825 * pi/180, -45 * pi/180, 90. * pi/180)
-CE1Id = detector.Detector(43.827 * pi/180, -112.825 * pi/180, -45 * pi/180, 90. * pi/180, 'L', _readASD(PSDS_DIR*"ce_strain/cosmic_explorer.txt")..., "CE1Id")
+CE1Id = detector.Detector(43.827 * pi/180, -112.825 * pi/180, -45 * pi/180, 90. * pi/180, 'L', _readASD(PSDS_DIR*"CE_curves/cosmic_explorer.txt")..., "CE1Id")
 
 CE2NM_coordinates=detector.DetectorCoordinates(33.160 * pi/180, -106.480 * pi/180, -105. * pi/180, 90. * pi/180)
-CE2NM = detector.Detector(33.160 * pi/180, -106.480 * pi/180, -105. * pi/180, 90. * pi/180, 'L', _readASD(PSDS_DIR*"ce_strain/cosmic_explorer_20km.txt")..., "CE2NM")
+CE2NM = detector.Detector(33.160 * pi/180, -106.480 * pi/180, -105. * pi/180, 90. * pi/180, 'L', _readASD(PSDS_DIR*"CE_curves/cosmic_explorer_20km.txt")..., "CE2NM")
 
 CE2NSW_coordinates=detector.DetectorCoordinates(-34. * pi/180, 145. * pi/180, 0. * pi/180, 90. * pi/180)
-CE2NSW=detector.Detector(-34. * pi/180, 145. * pi/180, 0. * pi/180, 90. * pi/180, 'L', _readASD(PSDS_DIR*"ce_strain/cosmic_explorer_20km.txt")...,  "CE2NSW")
+CE2NSW=detector.Detector(-34. * pi/180, 145. * pi/180, 0. * pi/180, 90. * pi/180, 'L', _readASD(PSDS_DIR*"CE_curves/cosmic_explorer_20km.txt")...,  "CE2NSW")
 
 ETS_coodinates = detector.DetectorCoordinates((40. +31. /60.) * pi/180, (9. +25. /60.) * pi/180, 0. * pi/180, 60. * pi/180)
-ETS=detector.Detector((40. +31. /60.) * pi/180, (9. +25. /60.) * pi/180, 0. * pi/180, 60. * pi/180, 'T', _readASD(PSDS_DIR*"ET-0000A-18.txt")...,  "ETS")
+ETS=detector.Detector((40. +31. /60.) * pi/180, (9. +25. /60.) * pi/180, 0. * pi/180, 60. * pi/180, 'T', _readASD(PSDS_DIR*"ET_curves/ET-0000A-18_ETDSensitivityCurveTxtFile.txt", cols=[1,4])...,  "ETS")
 
 ETLS_coodinates = detector.DetectorCoordinates((40. +31. /60.) * pi/180, (9. +25. /60.) * pi/180, 0. * pi/180, 90. * pi/180)
-ETLS = detector.Detector((40. +31. /60.) * pi/180, (9. +25. /60.) * pi/180, 0. * pi/180, 90. * pi/180, 'L', _readASD(PSDS_DIR*"ET-0000A-18.txt")...,  "ETLS")
+ETLS = detector.Detector((40. +31. /60.) * pi/180, (9. +25. /60.) * pi/180, 0. * pi/180, 90. * pi/180, 'L', _readASD(PSDS_DIR*"ET_curves/ET-0000A-18_ETDSensitivityCurveTxtFile.txt", cols=[1,4])...,  "ETLS")
 
 ETMR_coordinates = detector.DetectorCoordinates((50. +43. /60. +23. /3600.) * pi/180, (5. +55. /60. +14. /3600.) * pi/180, 0. * pi/180, 60. * pi/180)
-ETMR = detector.Detector((50. +43. /60. +23. /3600.) * pi/180, (5. +55. /60. +14. /3600.) * pi/180, 0. * pi/180, 60. * pi/180, 'T', _readASD(PSDS_DIR*"ET-0000A-18.txt")...,  "ETMR")
+ETMR = detector.Detector((50. +43. /60. +23. /3600.) * pi/180, (5. +55. /60. +14. /3600.) * pi/180, 0. * pi/180, 60. * pi/180, 'T', _readASD(PSDS_DIR*"ET_curves/ET-0000A-18_ETDSensitivityCurveTxtFile.txt", cols=[1,4])...,  "ETMR")
 
 ETLMR_coordinates = detector.DetectorCoordinates((50. +43. /60. +23. /3600.) * pi/180, (5. +55. /60. +14. /3600.) * pi/180, 0. * pi/180, 90. * pi/180)
-ETLMR = detector.Detector((50. +43. /60. +23. /3600.) * pi/180, (5. +55. /60. +14. /3600.) * pi/180, 0. * pi/180, 90. * pi/180, 'L', _readASD(PSDS_DIR*"ET-0000A-18.txt")...,  "ETLMR")
+ETLMR = detector.Detector((50. +43. /60. +23. /3600.) * pi/180, (5. +55. /60. +14. /3600.) * pi/180, 0. * pi/180, 90. * pi/180, 'L', _readASD(PSDS_DIR*"ET_curves/ET-0000A-18_ETDSensitivityCurveTxtFile.txt", cols=[1,4])...,  "ETLMR")
 
 LIGO_L_coordinates = detector.DetectorCoordinates(30.563 * pi/180, -90.774 * pi/180, 242.71636956358617* pi/180, 90. * pi/180)
 LIGO_L = detector.Detector(30.563 * pi/180, -90.774 * pi/180, 242.71636956358617* pi/180, 90. * pi/180, 'L', _readASD(PSDS_DIR*"observing_scenarios_paper/aligo_O3actual_L1.txt")...,  "LIGO_L")
