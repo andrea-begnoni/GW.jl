@@ -1922,8 +1922,8 @@ function FisherMatrix(model::Model,
     psi::AbstractArray,
     tcoal::AbstractArray,
     phiCoal::AbstractArray,
-    Lambda1=0.0,
-    Lambda2=0.0;
+    Lambda1=nothing,
+    Lambda2=nothing;
     fmin=2.0,
     fmax = nothing,
     res = 1000,
@@ -1940,6 +1940,13 @@ function FisherMatrix(model::Model,
     nPar = _npar(model)
     if name_folder == nothing
         name_folder = _event_type(model) 
+    end
+
+    if Lambda1==nothing
+        Lambda1 = zeros(size(mc))
+    end
+    if Lambda2==nothing
+        Lambda2 = zeros(size(mc))
     end
 
     Fishers = Array{Float64}(undef, nEvents, nPar, nPar)
