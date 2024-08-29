@@ -404,10 +404,11 @@ end
 """
 Compute the amplitude of the GW signal projected on the detector tensor, given a waveform model and a detector
 
-    AmplitudeDet(model, f, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, DetectorCoordinates, Lambda1, Lambda2, alpha = 0., useEarthMotion = false)
+    AmplitudeDet(model, DetectorCoordinates, f, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, Lambda1, Lambda2, alpha = 0., useEarthMotion = false)
 
     #### Input arguments:
     -  `model` : structure, containing the waveform model
+    -  `DetectorCoordinates` : structure, containing the coordinates of the detector
     -  `f` : array, frequency of the GW signal, Hz
     -  `mc` : float, chirp mass, solar masses
     -  `eta` : float, symmetric mass ratio
@@ -419,7 +420,6 @@ Compute the amplitude of the GW signal projected on the detector tensor, given a
     -  `iota` : float, inclination angle of the orbital angular momentum to the line of sight toward the detector, radians
     -  `psi` : float, polarisation angle, radians
     -  `tcoal` : float, time of coalescence, GMST, fraction of days
-    -  `DetectorCoordinates` : structure, containing the coordinates of the detector
     -  `Lambda1` : float, tidal parameter of the first object, default 0.0
     -  `Lambda2` : float, tidal parameter of the second object, default 0.0
 
@@ -434,10 +434,11 @@ Compute the amplitude of the GW signal projected on the detector tensor, given a
 
     #### Example:
     ```julia
-    Ap, Ac = AmplitudeDet(PhenomD(), 1:100, 10.0, 0.25, 0.5, 0.5, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5, CE1Id_coordinates)
+    Ap, Ac = AmplitudeDet(PhenomD(), CE1Id_coordinates, 1:100, 10.0, 0.25, 0.5, 0.5, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5)
     ```
 """
 function AmplitudeDet(model::Model,
+    DetectorCoordinates::DetectorStructure,
     f::AbstractArray,
     mc::Union{Float64,ForwardDiff.Dual},
     eta::Union{Float64,ForwardDiff.Dual},
@@ -449,7 +450,6 @@ function AmplitudeDet(model::Model,
     iota::Union{Float64,ForwardDiff.Dual},
     psi::Union{Float64,ForwardDiff.Dual},
     tcoal::Union{Float64,ForwardDiff.Dual},
-    DetectorCoordinates::DetectorStructure,
     Lambda1 = 0.0,
     Lambda2 = 0.0;
     alpha = 0.0,
@@ -489,7 +489,7 @@ function AmplitudeDet(model::Model,
     end
 
 
-    Ap = @.  Fp * 0.5 * (1.0 + (cos(iota))^2) .* Ampl
+    Ap = @. Fp * 0.5 * (1.0 + (cos(iota))^2) .* Ampl
     Ac = @. Fc * cos(iota) .* Ampl
 
     return Ap, Ac
@@ -502,10 +502,11 @@ Compute the amplitude of the GW signal projected on the detector tensor, given a
 This function is for the HM model, since inside the function we can not rely on computing the amplitude separately from the phase,
 we need to compute the full hp and hc.
 
-    AmplitudeDet(PhenomHM(), f, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, DetectorCoordinates, Lambda1, Lambda2, alpha = 0., useEarthMotion = false)
+    AmplitudeDet(PhenomHM(), DetectorCoordinates, f, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, Lambda1, Lambda2, alpha = 0., useEarthMotion = false)
 
     #### Input arguments:
     -  `model` : structure, containing the waveform model, needs to be PhenomHM
+    -  `DetectorCoordinates` : structure, containing the coordinates of the detector
     -  `f` : array, frequency of the GW signal, Hz
     -  `mc` : float, chirp mass, solar masses
     -  `eta` : float, symmetric mass ratio
@@ -517,7 +518,6 @@ we need to compute the full hp and hc.
     -  `iota` : float, inclination angle of the orbital angular momentum to the line of sight toward the detector, radians
     -  `psi` : float, polarisation angle, radians
     -  `tcoal` : float, time of coalescence, GMST, fraction of days
-    -  `DetectorCoordinates` : structure, containing the coordinates of the detector
     -  `Lambda1` : float, tidal parameter of the first object, default 0.0
     -  `Lambda2` : float, tidal parameter of the second object, default 0.0
 
@@ -532,11 +532,12 @@ we need to compute the full hp and hc.
 
     #### Example:
     ```julia
-    Ap, Ac = AmplitudeDet(PhenomD(), 1:100, 10.0, 0.25, 0.5, 0.5, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5, CE1Id_coordinates)
+    Ap, Ac = AmplitudeDet(PhenomD(), CE1Id_coordinates , 1:100, 10.0, 0.25, 0.5, 0.5, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5)
     ```
 """
 function AmplitudeDet(
     model::PhenomHM,
+    DetectorCoordinates::DetectorStructure,
     f::AbstractArray,
     mc::Union{Float64,ForwardDiff.Dual},
     eta::Union{Float64,ForwardDiff.Dual},
@@ -548,7 +549,6 @@ function AmplitudeDet(
     iota::Union{Float64,ForwardDiff.Dual},
     psi::Union{Float64,ForwardDiff.Dual},
     tcoal::Union{Float64,ForwardDiff.Dual},
-    DetectorCoordinates::DetectorStructure,
     Lambda1=0.0,
     Lambda2=0.0;
     alpha = 0.0,
@@ -582,10 +582,11 @@ end
 """
 This function computes the phase of the waveform seen by the detector, given a waveform model. It already includes the phase due to the Earth motion.
 
-    PhaseDet(model, f, mc, eta, chi1, chi2, theta, phi, tcoal, phiCoal, DetectorCoordinates, Lambda1, Lambda2; useEarthMotion = false, phase_precomputation = nothing)
+    PhaseDet(model, DetectorCoordinates, f, mc, eta, chi1, chi2, theta, phi, tcoal, phiCoal, DetectorCoordinates, Lambda1, Lambda2; useEarthMotion = false, phase_precomputation = nothing)
 
     #### Input arguments:
     -  `model` : structure, containing the waveform model
+    -  `DetectorCoordinates` : structure, containing the coordinates of the detector
     -  `f` : array, frequency of the GW signal, Hz
     -  `mc` : float, chirp mass, solar masses
     -  `eta` : float, symmetric mass ratio
@@ -595,7 +596,6 @@ This function computes the phase of the waveform seen by the detector, given a w
     -  `phi` : float, sky position angle, radians
     -  `tcoal` : float, time of coalescence, GMST, fraction of days
     -  `phiCoal` : float, GW phase at coalescence, radians
-    -  `DetectorCoordinates` : structure, containing the coordinates of the detector
     -  `Lambda1` : float, tidal parameter of the first object, default 0.0
     -  `Lambda2` : float, tidal parameter of the second object, default 0.0
 
@@ -608,12 +608,13 @@ This function computes the phase of the waveform seen by the detector, given a w
 
     #### Example:
     ```julia
-    phase = PhaseDet(PhenomD(), 1:100, 10.0, 0.25, 0.5, 0.5, 0.1, 0.2, 0.3, 0.4, CE1Id_coordinates)
+    phase = PhaseDet(PhenomD(), CE1Id_coordinates, 1:100, 10.0, 0.25, 0.5, 0.5, 0.1, 0.2, 0.3, 0.4)
     ```
 
 """
 function PhaseDet(
     model::Model,
+    DetectorCoordinates::DetectorStructure,
     f::AbstractArray,
     mc::Union{Float64,ForwardDiff.Dual},
     eta::Union{Float64,ForwardDiff.Dual},
@@ -623,7 +624,6 @@ function PhaseDet(
     phi::Union{Float64,ForwardDiff.Dual},
     tcoal::Union{Float64,ForwardDiff.Dual},
     phiCoal::Union{Float64,ForwardDiff.Dual},
-    DetectorCoordinates::DetectorStructure,
     Lambda1 = 0.0,
     Lambda2 = 0.0;
     useEarthMotion = false,
@@ -668,10 +668,11 @@ end
 """
 This function computes the full strain (complex) as a function of the parameters, at given frequencies, at detector location, as measured by the detector, since it include the pattern functions, via AmplitudeDet and PhaseDet.
 
-    Strain(model, f, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, DetectorCoordinates, Lambda1, Lambda2, useEarthMotion=false, alpha=0.)
+    Strain(model, DetectorCoordinates,  f, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1, Lambda2, useEarthMotion=false, alpha=0.)
 
     #### Input arguments:
     -  `model` : structure, containing the waveform model
+    -  `DetectorCoordinates` : structure, containing the coordinates of the detector
     -  `f` : array, frequency of the GW signal, Hz
     -  `mc` : float, chirp mass, solar masses
     -  `eta` : float, symmetric mass ratio
@@ -699,12 +700,12 @@ This function computes the full strain (complex) as a function of the parameters
 
     #### Example:
     ```julia
-    strain = Strain(PhenomD(), 1:100, 10.0, 0.25, 0.5, 0.5, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5, CE1Id_coordinates)
+    strain = Strain(PhenomD(), CE1Id_coordinates, 1:100, 10.0, 0.25, 0.5, 0.5, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5)
     ```
-
 
 """
 function Strain(model::Model,
+    DetectorCoordinates::DetectorStructure,
     f::AbstractArray,
     mc,
     eta,
@@ -717,7 +718,6 @@ function Strain(model::Model,
     psi,
     tcoal,
     phiCoal,
-    DetectorCoordinates::DetectorStructure,
     Lambda1 = 0.0,
     Lambda2 = 0.0;
     useEarthMotion = false,
@@ -728,6 +728,7 @@ function Strain(model::Model,
 
     Ap, Ac = AmplitudeDet(
         model,
+        DetectorCoordinates,
         f,
         mc,
         eta,
@@ -739,7 +740,6 @@ function Strain(model::Model,
         iota,
         psi,
         tcoal,
-        DetectorCoordinates,
         Lambda1,
         Lambda2,
         alpha = alpha,
@@ -748,6 +748,7 @@ function Strain(model::Model,
     )
     Psi = PhaseDet(
             model,
+            DetectorCoordinates,
             f,
             mc,
             eta,
@@ -757,7 +758,6 @@ function Strain(model::Model,
             phi,
             tcoal,
             phiCoal,
-            DetectorCoordinates,
             Lambda1,
             Lambda2,
             useEarthMotion = useEarthMotion,
@@ -808,6 +808,7 @@ This function computes the full strain (complex) as a function of the parameters
 
 """
 function Strain(model::PhenomHM,
+    DetectorCoordinates::DetectorStructure,
     f::AbstractArray,
     mc,
     eta,
@@ -819,8 +820,7 @@ function Strain(model::PhenomHM,
     iota,
     psi,
     tcoal,
-    phiCoal,
-    DetectorCoordinates::DetectorStructure;
+    phiCoal;
     useEarthMotion = false,
     alpha = 0.0,
     ampl_precomputation = nothing,
@@ -858,10 +858,11 @@ The SNR is computed as the square root of the integral of the signal-to-noise ra
 The integral is computed using the trapezoidal rule.
 This function is the main function to compute the SNR, then using multiple-dispatch this function is called when considering a network of detectors and more than a single event.
 
-SNR(model, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, detector, Lambda1=0.0, Lambda2=0.0; fmin=2.0, fmax=nothing, res=1000, useEarthMotion=false, ampl_precomputation=nothing)
+SNR(model, detector, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, Lambda1=0.0, Lambda2=0.0; fmin=2.0, fmax=nothing, res=1000, useEarthMotion=false, ampl_precomputation=nothing)
 
     #### Input arguments:
     -  `model` : structure, containing the waveform model
+    -  `DetectorCoordinates` : structure, containing the coordinates of the detector
     -  `f` : array, frequency of the GW signal, Hz
     -  `mc` : float, chirp mass, solar masses
     -  `eta` : float, symmetric mass ratio
@@ -873,7 +874,6 @@ SNR(model, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, detector, Lamb
     -  `iota` : float, inclination angle of the orbital angular momentum to the line of sight toward the detector, radians
     -  `psi` : float, polarisation angle, radians
     -  `tcoal` : float, time of coalescence, GMST, fraction of days
-    -  `DetectorCoordinates` : structure, containing the coordinates of the detector
     -  `Lambda1` : float, tidal parameter of the first object, default 0.0
     -  `Lambda2` : float, tidal parameter of the second object, default 0.0
 
@@ -889,10 +889,11 @@ SNR(model, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, detector, Lamb
 
     #### Example:
     ```julia
-    SNR = SNR(PhenomD(), 10.0, 0.25, 0.5, 0.5, 1.0, 0.1, 0.2, 0.3, 0.4, CE1Id)
+    SNR = SNR(PhenomD(), CE1Id , 10.0, 0.25, 0.5, 0.5, 1.0, 0.1, 0.2, 0.3, 0.4)
     ```
 """
 function SNR(model::Model,
+    detector::Detector,
     mc::Float64,
     eta::Float64,
     chi1::Float64,
@@ -903,7 +904,6 @@ function SNR(model::Model,
     iota::Float64,
     psi::Float64,
     tcoal::Float64,
-    detector::Detector,
     Lambda1=0.0,
     Lambda2=0.0;
     fmin=2.0,
@@ -964,6 +964,7 @@ function SNR(model::Model,
     if detector.shape == 'L' # in Julia '' indicates a char, while "" a string 
         Aps, Acs = AmplitudeDet(
             model,
+            detectorCoordinates,
             fgrid,
             mc,
             eta,
@@ -975,7 +976,6 @@ function SNR(model::Model,
             iota,
             psi,
             tcoal,
-            detectorCoordinates,
             Lambda1,
             Lambda2,
             useEarthMotion = useEarthMotion,
@@ -992,6 +992,7 @@ function SNR(model::Model,
 
         Aps1, Acs1 = AmplitudeDet(
             model,
+            detectorCoordinates,
             fgrid,
             mc,
             eta,
@@ -1003,7 +1004,6 @@ function SNR(model::Model,
             iota,
             psi,
             tcoal,
-            detectorCoordinates,
             Lambda1,
             Lambda2,
             alpha = 0.0,
@@ -1013,6 +1013,7 @@ function SNR(model::Model,
         Atot1 = Aps1 .* Aps1 .+ Acs1 .* Acs1
         Aps2, Acs2 = AmplitudeDet(
             model,
+            detectorCoordinates,
             fgrid,
             mc,
             eta,
@@ -1024,7 +1025,6 @@ function SNR(model::Model,
             iota,
             psi,
             tcoal,
-            detectorCoordinates,
             Lambda1,
             Lambda2,
             alpha = 60.0,
@@ -1062,6 +1062,7 @@ where the dots indicate the parameters equal to the previous function call.
 
 """
 function SNR(model::Model,
+    detector::Vector{Detector},
     mc::Float64,
     eta::Float64,
     chi1::Float64,
@@ -1072,7 +1073,6 @@ function SNR(model::Model,
     iota::Float64,
     psi::Float64,
     tcoal::Float64,
-    detector::Vector{Detector},
     Lambda1 = 0.0,
     Lambda2 = 0.0;
     fmin=2.0,
@@ -1127,6 +1127,7 @@ function SNR(model::Model,
     for i in 1:length(detector)
         SNRList[i] = SNR(
             model,
+            detector[i],
             mc,
             eta,
             chi1,
@@ -1137,7 +1138,6 @@ function SNR(model::Model,
             iota,
             psi,
             tcoal,
-            detector[i],
             Lambda1,
             Lambda2,
             fmin=fmin,
@@ -1161,6 +1161,7 @@ if the default is left it saves BBH in the folder "output/BBH" and so on for eac
 and contains the SNRs for the events in the catalog. It contains also the parameters of the events if the optional argument `save_catalog` is set to true.
 """
 function SNR(model::Model,
+    detector::Union{Detector, Vector{Detector}},
     mc::AbstractArray,
     eta::AbstractArray,
     chi1::AbstractArray,
@@ -1171,7 +1172,6 @@ function SNR(model::Model,
     iota::AbstractArray,
     psi::AbstractArray,
     tcoal::AbstractArray,
-    detector::Union{Detector, Vector{Detector}},
     Lambda1=0.0,
     Lambda2=0.0;
     fmin=2.0,
@@ -1203,8 +1203,26 @@ function SNR(model::Model,
     end
 
     elapsed_time = @elapsed @showprogress desc="Computing SNRs..."  @threads for ii in 1:nEvents  
-                    SNRs[ii]=SNR(model, mc[ii], eta[ii], chi1[ii], chi2[ii], dL[ii], theta[ii], phi[ii], iota[ii], psi[ii], tcoal[ii],
-                                        detector, Lambda1[ii], Lambda2[ii], fmin=fmin, fmax=fmax, res = res, useEarthMotion = useEarthMotion, precomputation = precomputation)
+                    SNRs[ii]=SNR(
+                        model,
+                        detector,
+                        mc[ii], 
+                        eta[ii], 
+                        chi1[ii], 
+                        chi2[ii], 
+                        dL[ii], 
+                        theta[ii], 
+                        phi[ii], 
+                        iota[ii], 
+                        psi[ii], 
+                        tcoal[ii],
+                        Lambda1[ii],
+                        Lambda2[ii], 
+                        fmin=fmin, 
+                        fmax=fmax, 
+                        res = res, 
+                        useEarthMotion = useEarthMotion,
+                        precomputation = precomputation)
     end 
 
     println("SNRs computed!")
@@ -1262,10 +1280,11 @@ This function computes the Fisher Matrix for a single detector, given the parame
 To do the computation it uses the function FisherMatrix_internal(...) for L-shaped detectors and FisherMatrix_Tdetector(...) for T-shaped detectors.
 Thus it is a wrapper function that calls the correct function depending on the shape of the detector. More information on the Fisher Matrix computation can be found in the documentation of FisherMatrix_internal(...) and FisherMatrix_Tdetector(...).
 
-    FisherMatrix(model, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, detector, Lambda1=0.0, Lambda2=0.0, res=1000, useEarthMotion=false, alpha=0.0, rho_thres=12., fmin=2., fmax=nothing, coordinate_shift=true, return_SNR=false)
+    FisherMatrix(model, detector , mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1=0.0, Lambda2=0.0, res=1000, useEarthMotion=false, alpha=0.0, rho_thres=12., fmin=2., fmax=nothing, coordinate_shift=true, return_SNR=false)
 
     #### Input arguments:
     -  `model` : structure, containing the waveform model
+    -  `detector` : structure, containing the detector information
     -  `mc` : float, chirp mass, solar masses
     -  `eta` : float, symmetric mass ratio
     -  `chi1` : float, dimensionless spin component of the first BH
@@ -1277,7 +1296,6 @@ Thus it is a wrapper function that calls the correct function depending on the s
     -  `psi` : float, polarisation angle, radians
     -  `tcoal` : float, time of coalescence, GMST, fraction of days
     -  `phiCoal` : float, GW phase at coalescence, radians
-    -  `detector` : structure, containing the detector information
     -  `Lambda1` : float, tidal parameter of the first object, default 0.0
     -  `Lambda2` : float, tidal parameter of the second object, default 0.0
 
@@ -1296,12 +1314,13 @@ Thus it is a wrapper function that calls the correct function depending on the s
 
     #### Example:
     ```julia
-    FisherMatrix = FisherMatrix(PhenomD(), 10.0, 0.25, 0.5, 0.5, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, CE1Id)
+    FisherMatrix = FisherMatrix(PhenomD(), CE1Id , 10.0, 0.25, 0.5, 0.5, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6)
     ```
 
 
 """
 function FisherMatrix(model::Model,
+    detector::Detector,
     mc::Float64,
     eta::Float64,
     chi1::Float64,
@@ -1313,7 +1332,6 @@ function FisherMatrix(model::Model,
     psi::Float64,
     tcoal::Float64,
     phiCoal::Float64,
-    detector::Detector,
     Lambda1=0.,
     Lambda2=0.;
     res = 1000,
@@ -1331,6 +1349,7 @@ function FisherMatrix(model::Model,
 
         return FisherMatrix_internal(
             model,
+            detector,
             mc,
             eta,
             chi1,
@@ -1342,7 +1361,6 @@ function FisherMatrix(model::Model,
             psi,
             tcoal,
             phiCoal,
-            detector,
             Lambda1,
             Lambda2,
             rho_thres=rho_thres,
@@ -1357,6 +1375,7 @@ function FisherMatrix(model::Model,
 
         return FisherMatrix_Tdetector(
             model,
+            detector,
             mc,
             eta,
             chi1,
@@ -1368,7 +1387,6 @@ function FisherMatrix(model::Model,
             psi,
             tcoal,
             phiCoal,
-            detector,
             Lambda1,
             Lambda2,
             rho_thres=rho_thres,
@@ -1393,6 +1411,7 @@ There is no need to call this function in your computations since all the logic 
 """
 
 function FisherMatrix_internal(model::Model,
+    detector::Detector,
     mc::Float64,
     eta::Float64,
     chi1::Float64,
@@ -1404,7 +1423,6 @@ function FisherMatrix_internal(model::Model,
     psi::Float64,
     tcoal::Float64,
     phiCoal::Float64,
-    detector::Detector,
     Lambda1=0.,
     Lambda2=0.;
     res = 1000,
@@ -1433,6 +1451,7 @@ function FisherMatrix_internal(model::Model,
     if rho_thres !==nothing
         SNRval = SNR(
             model,
+            detector,
             mc,
             eta,
             chi1,
@@ -1443,7 +1462,6 @@ function FisherMatrix_internal(model::Model,
             iota,
             psi,
             tcoal,
-            detector,
             Lambda1,
             Lambda2,
             fmin = fmin,
@@ -1470,103 +1488,37 @@ function FisherMatrix_internal(model::Model,
     ###########  Derivatives of the strain w.r.t. each parameter
     strainAutoDiff_real = Matrix{Float64}(undef, res, nPar)
     strainAutoDiff_imag = Matrix{Float64}(undef, res, nPar)
-    if typeof(model) == PhenomD || typeof(model) == PhenomHM || typeof(model) == TaylorF2 || typeof(model) == PhenomXAS
-
-        strainAutoDiff_real = ForwardDiff.jacobian(
+    
+    event_parameter = [mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1, Lambda2]
+    event_parameter = event_parameter[1:nPar] # cut off non-required parameter,  
+    strainAutoDiff_real = ForwardDiff.jacobian(
         x -> real(
             Strain(
                 model,
-                fgrid,
-                x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11],
                 detectorCoordinates,
+                fgrid,
+                x... ,
                 alpha = alpha,
                 useEarthMotion = useEarthMotion
             ),
         ),
-        [mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal],
-        )
-        strainAutoDiff_imag = ForwardDiff.jacobian(
-            x -> imag(
-                Strain(
-                    model,
-                    fgrid,
-                    x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11],
-                    detectorCoordinates,
-                    alpha = alpha,
-                    useEarthMotion = useEarthMotion,
-                ),
+        event_parameter,
+    )
+    strainAutoDiff_imag = ForwardDiff.jacobian(
+        x -> imag(
+            Strain(
+                model,
+                detectorCoordinates,
+                fgrid,
+                x... ,
+                alpha = alpha,
+                useEarthMotion = useEarthMotion,
             ),
-            [mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal],
-        )
+        ),
+        event_parameter,
+    )
 
-    elseif typeof(model) == PhenomD_NRTidal
-            strainAutoDiff_real = ForwardDiff.jacobian(
-            x -> real(
-                Strain(
-                    model,
-                    fgrid,
-                    x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11],
-                    detectorCoordinates,
-                    x[12], x[13],
-                    alpha = alpha,
-                    useEarthMotion = useEarthMotion,
-                ),
-            ),
-            [mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1, Lambda2],
-            )
-            strainAutoDiff_imag = ForwardDiff.jacobian(
-                x -> imag(
-                    Strain(
-                        model,
-                        fgrid,
-                        x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11],
-                        detectorCoordinates,
-                        x[12], x[13],
-                        alpha = alpha,
-                        useEarthMotion = useEarthMotion,
-                    ),
-                ),
-                [mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1, Lambda2],
-            )
-            # It can happen that a certain frequency gives a Nan value, in this case we set the derivative to zero,
-            # this happens less than one time per event and usually at the end of the frequency grid.
-            strainAutoDiff_real[isnan.(strainAutoDiff_real)] .= 0.0
-            strainAutoDiff_imag[isnan.(strainAutoDiff_imag)] .= 0.0
-
-    elseif typeof(model) == PhenomNSBH
-        #Lambda = Lambda1 # exist only one Lambda
-        strainAutoDiff_real = ForwardDiff.jacobian(
-            x -> real(
-                Strain(
-                    model,
-                    fgrid,
-                    x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11],
-                    detectorCoordinates,
-                    x[12],
-                    alpha = alpha,
-                    useEarthMotion = useEarthMotion,
-                ),
-            ),
-            [mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1],
-            )
-            strainAutoDiff_imag = ForwardDiff.jacobian(
-                x -> imag(
-                    Strain(
-                        model,
-                        fgrid,
-                        x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11],
-                        detectorCoordinates,
-                        x[12],
-                        alpha = alpha,
-                        useEarthMotion = useEarthMotion,
-                    ),
-                ),
-                [mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1],
-            )
-    end 
     ######### end of derivatives
-    
-
     jacobian = Matrix{ComplexF64}(undef, nPar, res)
     for ii in 1:nPar
         jacobian[ii, :] = strainAutoDiff_real[:, ii] + 1im * strainAutoDiff_imag[:, ii]
@@ -1606,6 +1558,7 @@ where the dots indicate the parameters equal to the previous function call.
 
 """
 function FisherMatrix(model::Model,
+    detector::Vector{Detector},
     mc::Float64,
     eta::Float64,
     chi1::Float64,
@@ -1617,7 +1570,6 @@ function FisherMatrix(model::Model,
     psi::Float64,
     tcoal::Float64,
     phiCoal::Float64,
-    detector::Vector{Detector},
     Lambda1=0.,
     Lambda2=0.;
     res = 1000,
@@ -1637,6 +1589,7 @@ function FisherMatrix(model::Model,
     if rho_thres !==nothing
         SNRval = SNR(
             model,
+            detector,
             mc,
             eta,
             chi1,
@@ -1647,7 +1600,6 @@ function FisherMatrix(model::Model,
             iota,
             psi,
             tcoal,
-            detector,
             Lambda1,
             Lambda2,
             fmin = fmin,
@@ -1672,6 +1624,7 @@ function FisherMatrix(model::Model,
         if detector[i].shape == 'L'
             F = FisherMatrix_internal(
                 model,
+                detector[i],
                 mc,
                 eta,
                 chi1,
@@ -1683,7 +1636,6 @@ function FisherMatrix(model::Model,
                 psi,
                 tcoal,
                 phiCoal,
-                detector[i],
                 Lambda1,
                 Lambda2,
                 rho_thres=nothing,
@@ -1697,6 +1649,7 @@ function FisherMatrix(model::Model,
         elseif detector[i].shape == 'T'
             F = FisherMatrix_Tdetector(
                 model,
+                detector[i],
                 mc,
                 eta,
                 chi1,
@@ -1708,7 +1661,6 @@ function FisherMatrix(model::Model,
                 psi,
                 tcoal,
                 phiCoal,
-                detector[i],
                 Lambda1,
                 Lambda2,
                 rho_thres=nothing,
@@ -1736,6 +1688,7 @@ end
 This is a helper function that computes the Fisher Matrix for a single detector with T shape. It is called by the function FisherMatrix and calls FisherMatrix_internal.
 """
 function FisherMatrix_Tdetector(model::Model,
+    detector::Detector,
     mc::Float64,
     eta::Float64,
     chi1::Float64,
@@ -1747,7 +1700,6 @@ function FisherMatrix_Tdetector(model::Model,
     psi::Float64,
     tcoal::Float64,
     phiCoal::Float64,
-    detector::Detector,
     Lambda1=0.,
     Lambda2=0.;
     res = 1000,
@@ -1767,6 +1719,7 @@ function FisherMatrix_Tdetector(model::Model,
 
         SNRval = SNR(
             model,
+            detector,
             mc,
             eta,
             chi1,
@@ -1777,7 +1730,6 @@ function FisherMatrix_Tdetector(model::Model,
             iota,
             psi,
             tcoal,
-            detector,
             Lambda1,
             Lambda2,
             fmin = fmin,
@@ -1833,6 +1785,7 @@ function FisherMatrix_Tdetector(model::Model,
 
     F1 = FisherMatrix_internal(
         model,
+        ET1,
         mc,
         eta,
         chi1,
@@ -1844,7 +1797,6 @@ function FisherMatrix_Tdetector(model::Model,
         psi,
         tcoal,
         phiCoal,
-        ET1,
         Lambda1,
         Lambda2,
         res = res,
@@ -1857,6 +1809,7 @@ function FisherMatrix_Tdetector(model::Model,
     )
     F2 = FisherMatrix_internal(
         model,
+        ET2,
         mc,
         eta,
         chi1,
@@ -1868,7 +1821,6 @@ function FisherMatrix_Tdetector(model::Model,
         psi,
         tcoal,
         phiCoal,
-        ET2,
         Lambda1,
         Lambda2,
         res = res,
@@ -1881,6 +1833,7 @@ function FisherMatrix_Tdetector(model::Model,
     )
     F3 = FisherMatrix_internal(
         model,
+        ET3,
         mc,
         eta,
         chi1,
@@ -1892,7 +1845,6 @@ function FisherMatrix_Tdetector(model::Model,
         psi,
         tcoal,
         phiCoal,
-        ET3,
         Lambda1,
         Lambda2,
         res = res,
@@ -1916,10 +1868,11 @@ The main function of the code, it computes the Fisher Matrix for an array of eve
 SNRs if requested and saves the results (Fisher matrices and SNRs) in a file if the optional argument `auto_save` is set to true. The file is saved in the folder `output/name_folder/Fishers_SNRs.h5`
 
 
-    FisherMatrix(model, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, detector, Lambda1=0.0, Lambda2=0.0, res=1000, useEarthMotion=false, alpha=0.0, rho_thres=12., fmin=2., fmax=nothing, coordinate_shift=true, return_SNR=false)
+    FisherMatrix(model, detector, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal,  Lambda1=0.0, Lambda2=0.0, res=1000, useEarthMotion=false, alpha=0.0, rho_thres=12., fmin=2., fmax=nothing, coordinate_shift=true, return_SNR=false)
 
     #### Input arguments:
     -  `model` : structure, containing the waveform model
+    -  `detector` : structure, containing the detector information
     -  `mc` : float, chirp mass, solar masses
     -  `eta` : float, symmetric mass ratio
     -  `chi1` : float, dimensionless spin component of the first BH
@@ -1931,7 +1884,6 @@ SNRs if requested and saves the results (Fisher matrices and SNRs) in a file if 
     -  `psi` : float, polarisation angle, radians
     -  `tcoal` : float, time of coalescence, GMST, fraction of days
     -  `phiCoal` : float, GW phase at coalescence, radians
-    -  `detector` : structure, containing the detector information
     -  `Lambda1` : float, tidal parameter of the first object, default 0.0
     -  `Lambda2` : float, tidal parameter of the second object, default 0.0
 
@@ -1958,6 +1910,7 @@ SNRs if requested and saves the results (Fisher matrices and SNRs) in a file if 
 
 """
 function FisherMatrix(model::Model,
+    detector::Union{Detector, Vector{Detector}},
     mc::AbstractArray,
     eta::AbstractArray,
     chi1::AbstractArray,
@@ -1969,9 +1922,8 @@ function FisherMatrix(model::Model,
     psi::AbstractArray,
     tcoal::AbstractArray,
     phiCoal::AbstractArray,
-    detector::Union{Detector, Vector{Detector}},
-    Lambda1=0.0,
-    Lambda2=0.0;
+    Lambda1=nothing,
+    Lambda2=nothing;
     fmin=2.0,
     fmax = nothing,
     res = 1000,
@@ -1990,13 +1942,43 @@ function FisherMatrix(model::Model,
         name_folder = _event_type(model) 
     end
 
+    if Lambda1==nothing
+        Lambda1 = zeros(size(mc))
+    end
+    if Lambda2==nothing
+        Lambda2 = zeros(size(mc))
+    end
+
     Fishers = Array{Float64}(undef, nEvents, nPar, nPar)
     if return_SNR == true
         SNRs = Array{Float64}(undef, nEvents)
         elapsed_time = @elapsed @showprogress desc="Computing Fishers and SNRs..." @threads for ii in 1:nEvents  
-            Fishers[ii,:,:], SNRs[ii] = FisherMatrix(model, mc[ii], eta[ii], chi1[ii], chi2[ii], dL[ii], theta[ii], phi[ii], iota[ii], psi[ii], tcoal[ii], phiCoal[ii],
-                                detector, Lambda1[ii], Lambda2[ii], fmin=fmin, fmax=fmax, res = res, useEarthMotion = useEarthMotion, rho_thres=rho_thres, alpha = alpha, coordinate_shift = coordinate_shift, return_SNR=true)
-            end 
+            Fishers[ii,:,:], SNRs[ii] = FisherMatrix(
+                model,
+                detector, 
+                mc[ii], 
+                eta[ii], 
+                chi1[ii], 
+                chi2[ii], 
+                dL[ii], 
+                theta[ii], 
+                phi[ii], 
+                iota[ii], 
+                psi[ii], 
+                tcoal[ii], 
+                phiCoal[ii], 
+                Lambda1[ii], 
+                Lambda2[ii], 
+                fmin=fmin, 
+                fmax=fmax, 
+                res = res, 
+                useEarthMotion = useEarthMotion, 
+                rho_thres=rho_thres, 
+                alpha = alpha, 
+                coordinate_shift = coordinate_shift, 
+                return_SNR=true
+            )
+        end 
 
         println("Fisher matrices and SNRs computed!")
         if elapsed_time > 60.0
@@ -2047,8 +2029,30 @@ function FisherMatrix(model::Model,
         return Fishers, SNRs
     else
         elapsed_time = @elapsed  @showprogress desc="Computing Fishers..."  @threads for ii in 1:nEvents  
-                    Fishers[ii,:,:]=FisherMatrix(model, mc[ii], eta[ii], chi1[ii], chi2[ii], dL[ii], theta[ii], phi[ii], iota[ii], psi[ii], tcoal[ii], phiCoal[ii],
-                                        detector, Lambda1[ii], Lambda2[ii], fmin=fmin, fmax=fmax, res = res, useEarthMotion = useEarthMotion, rho_thres=rho_thres, alpha = alpha, coordinate_shift = coordinate_shift)
+                    Fishers[ii,:,:]=FisherMatrix(
+                        model,
+                        detector,
+                        mc[ii],
+                        eta[ii], 
+                        chi1[ii],
+                        chi2[ii],
+                        dL[ii],
+                        theta[ii],
+                        phi[ii], 
+                        iota[ii], 
+                        psi[ii], 
+                        tcoal[ii], 
+                        phiCoal[ii],
+                        Lambda1[ii],
+                        Lambda2[ii],
+                        fmin=fmin, 
+                        fmax=fmax, 
+                        res = res, 
+                        useEarthMotion = useEarthMotion, 
+                        rho_thres=rho_thres, 
+                        alpha = alpha, 
+                        coordinate_shift = coordinate_shift
+                    )
                 end 
         println("Fisher matrices computed!")
         if elapsed_time > 60.0
@@ -2147,4 +2151,4 @@ end
 
 
 
-end
+end# of module
