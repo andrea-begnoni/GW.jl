@@ -106,7 +106,11 @@ function _available_waveforms()
     return ["TaylorF2", "PhenomD", "PhenomHM", "PhenomD_NRTidal", "PhenomNSBH", "PhenomXAS"]
 end
 
-@doc "Function to check the available waveforms and return the corresponding model."
+
+#@doc "Function to check the available waveforms and return the corresponding model."
+"""
+Function to check the available waveforms and return the corresponding model.
+"""
 function _available_waveforms(waveform::String)
 
     if waveform == "TaylorF2"
