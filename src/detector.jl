@@ -1518,6 +1518,10 @@ function FisherMatrix_internal(model::Model,
         event_parameter,
     )
 
+    # It can happen that a certain frequency gives a Nan value, in this case we set the derivative to zero,
+    # this happens less than one time per event and usually at the end of the frequency grid.
+    strainAutoDiff_real[isnan.(strainAutoDiff_real)] .= 0.0
+    strainAutoDiff_imag[isnan.(strainAutoDiff_imag)] .= 0.0
     ######### end of derivatives
     jacobian = Matrix{ComplexF64}(undef, nPar, res)
     for ii in 1:nPar
@@ -1938,14 +1942,14 @@ function FisherMatrix(model::Model,
 )
     nEvents = length(mc)
     nPar = _npar(model)
-    if name_folder == nothing
+    if name_folder === nothing
         name_folder = _event_type(model) 
     end
 
-    if Lambda1==nothing
+    if Lambda1===nothing
         Lambda1 = zeros(size(mc))
     end
-    if Lambda2==nothing
+    if Lambda2===nothing
         Lambda2 = zeros(size(mc))
     end
 
