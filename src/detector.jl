@@ -525,88 +525,6 @@ function PolarizationDet(model::Model,
 end
 
 """
-Compute the amplitude of the GW signal projected on the detector tensor, given a waveform model and a detector.
-This function is for the HM model, since inside the function we can not rely on computing the amplitude separately from the phase,
-we need to compute the full hp and hc.
-
-    PolarizationDet(PhenomHM(), DetectorCoordinates, f, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, Lambda1, Lambda2, alpha = 0., useEarthMotion = false)
-
-    #### Input arguments:
-    -  `model` : structure, containing the waveform model, needs to be PhenomHM
-    -  `DetectorCoordinates` : structure, containing the coordinates of the detector
-    -  `f` : array, frequency of the GW signal, Hz
-    -  `mc` : float, chirp mass, solar masses
-    -  `eta` : float, symmetric mass ratio
-    -  `chi1` : float, dimensionless spin component of the first BH
-    -  `chi2` : float, dimensionless spin component of the second BH
-    -  `dL` : float, luminosity distance, Gpc
-    -  `theta` : float, sky position angle, radians
-    -  `phi` : float, sky position angle, radians
-    -  `iota` : float, inclination angle of the orbital angular momentum to the line of sight toward the detector, radians
-    -  `psi` : float, polarisation angle, radians
-    -  `tcoal` : float, time of coalescence, GMST, fraction of days
-    -  `Lambda1` : float, tidal parameter of the first object, default 0.0
-    -  `Lambda2` : float, tidal parameter of the second object, default 0.0
-
-    #### Optional arguments:
-    -  `alpha` : float, default 0.0, further rotation of the interferometer with respect to the east-west direction, needed for the triangular geometry
-    -  `useEarthMotion` : bool, default false, if true the Earth motion is considered during the measurement
-    -  `ampl_precomputation` : array, default nothing, precomputed amplitude
-
-    #### Output:
-    - `Ap`  : array, plus amplitude as seen by the detector
-    - `Ac`  : array, cross amplitude as seen by the detector
-
-    #### Example:
-    ```julia
-    Ap, Ac = PolarizationDet(PhenomD(), CE1Id_coordinates , 1:100, 10.0, 0.25, 0.5, 0.5, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5)
-    ```
-"""
-function PolarizationDet(
-    model::PhenomHM,
-    DetectorCoordinates::DetectorStructure,
-    f::AbstractArray,
-    mc::Union{Float64,ForwardDiff.Dual},
-    eta::Union{Float64,ForwardDiff.Dual},
-    chi1::Union{Float64,ForwardDiff.Dual},
-    chi2::Union{Float64,ForwardDiff.Dual},
-    dL::Union{Float64,ForwardDiff.Dual},
-    theta::Union{Float64,ForwardDiff.Dual},
-    phi::Union{Float64,ForwardDiff.Dual},
-    iota::Union{Float64,ForwardDiff.Dual},
-    psi::Union{Float64,ForwardDiff.Dual},
-    tcoal::Union{Float64,ForwardDiff.Dual},
-    Lambda1=0.0,
-    Lambda2=0.0;
-    alpha = 0.0,
-    useEarthMotion = false,
-    ampl_precomputation = nothing
-)
-
-    if useEarthMotion # technique from GWFAST
-        tcoalRescaled = tcoal .- waveform._tau_star(model, f, mc, eta) ./ (3600.0 * 24.0)
-        tRef =
-            tcoalRescaled .+
-            _deltLoc(theta, phi, tcoalRescaled, DetectorCoordinates) ./ (3600.0 * 24.0)
-    else
-        tRef = tcoal + _deltLoc(theta, phi, tcoal, DetectorCoordinates) / (3600.0 * 24.0)
-    end
-
-    Fp, Fc = _patternFunction(theta, phi, psi, tRef, DetectorCoordinates, alpha_grad=alpha)
-
-    if ampl_precomputation === nothing
-        hp, hc = waveform.hphc(model, f, mc, eta, chi1, chi2, dL, iota)
-    else
-        hp, hc = ampl_precomputation
-    end
-
-    Ap, Ac = abs.(hp) .* Fp, abs.(hc) .* Fc
-
-    return Ap, Ac
-
-end
-
-"""
 ToDo: New documentation for this function
 This function computes the phase of the waveform seen by the detector, given a waveform model. It already includes the phase due to the Earth motion.
 
@@ -688,14 +606,16 @@ function Strain(model::Model,
     eta,
     chi1,
     chi2,
+    dL,
     theta,
     phi,
+    iota,
     psi,
     tcoal,
     phiCoal,
     Lambda1 = 0.0,
     Lambda2 = 0.0;
-    useEarthMotion = false,
+    useEarthMotion = false
 )
 
     phase_det = PhaseDet(
@@ -819,8 +739,10 @@ function Strain(model::Model,
         eta,
         chi1,
         chi2,
+        dL,
         theta,
         phi,
+        iota,
         psi,
         tcoal,
         phiCoal,
@@ -834,43 +756,7 @@ function Strain(model::Model,
 end
 
 """
-This function computes the full strain (complex) as a function of the parameters, at given frequencies, at detector location, as measured by the detector, since it include the pattern functions, via PolarizationDet and PhaseDet.
-
-    Strain(PhenomHM(), f, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, DetectorCoordinates, Lambda1, Lambda2, useEarthMotion=false, alpha=0.)
-
-    #### Input arguments:
-    -  `model` : structure, containing the waveform model
-    -  `f` : array, frequency of the GW signal, Hz
-    -  `mc` : float, chirp mass, solar masses
-    -  `eta` : float, symmetric mass ratio
-    -  `chi1` : float, dimensionless spin component of the first BH
-    -  `chi2` : float, dimensionless spin component of the second BH
-    -  `dL` : float, luminosity distance, Gpc
-    -  `theta` : float, sky position angle, radians
-    -  `phi` : float, sky position angle, radians
-    -  `iota` : float, inclination angle of the orbital angular momentum to the line of sight toward the detector, radians
-    -  `psi` : float, polarisation angle, radians
-    -  `tcoal` : float, time of coalescence, GMST, fraction of days
-    -  `phiCoal` : float, GW phase at coalescence, radians
-    -  `DetectorCoordinates` : structure, containing the coordinates of the detector
-    -  `Lambda1` : float, tidal parameter of the first object, default 0.0
-    -  `Lambda2` : float, tidal parameter of the second object, default 0.0
-
-    #### Optional arguments:
-    -  `useEarthMotion` : bool, default false, if true the Earth motion is considered during the measurement
-    -  `alpha` : float, default 0.0, further rotation of the interferometer with respect to the east-west direction, needed for the triangular geometry
-    -  `ampl_precomputation` : array, default nothing, precomputed amplitude, not yet implemented for HM
-    -  `phase_precomputation` : array, default nothing, precomputed phase, not yet implemented for HM
-
-    #### Output:
-    - `strain`  : array, complex strain as seen by the detector
-
-    #### Example:
-    ```julia
-    strain = Strain(PhenomHM(), 1:100, 10.0, 0.25, 0.5, 0.5, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5, CE1Id_coordinates)
-    ```
-
-
+ToDo: Need documentatiation
 """
 function Strain(model::PhenomHM,
     DetectorCoordinates::DetectorStructure,
@@ -885,33 +771,59 @@ function Strain(model::PhenomHM,
     iota,
     psi,
     tcoal,
-    phiCoal;
+    phiCoal,
+    Lambda1 = 0.0,
+    Lambda2 = 0.0;
     useEarthMotion = false,
-    alpha = 0.0,
-    ampl_precomputation = nothing,
-    phase_precomputation = nothing,
+    alpha = 0.0
 )
 
-    # Full GW strain expression (complex)
-    if useEarthMotion # technique from GWFAST
-        tcoalRescaled = tcoal .- waveform._tau_star(model, f, mc, eta) ./ (3600.0 * 24.0)  #tcoal is in fraction of days, tau_star in seconds
-        tRef =
-            tcoalRescaled .+
-            _deltLoc(theta, phi, tcoalRescaled, DetectorCoordinates) ./ (3600.0 * 24.0)
-    else
-        tRef = tcoal + _deltLoc(theta, phi, tcoal, DetectorCoordinates) / (3600.0 * 24.0)
-    end
+    pol_det = PolarizationDet(
+        model,
+        DetectorCoordinates,
+        f,
+        mc,
+        eta,
+        chi1,
+        chi2,
+        dL,
+        theta,
+        phi,
+        iota,
+        psi,
+        tcoal,
+        Lambda1,
+        Lambda2,
+        alpha = alpha,
+        useEarthMotion = useEarthMotion
+    )
 
-    phiD = (2.0 * pi .* f) .* _deltLoc(theta, phi, tcoal, DetectorCoordinates) # phase due to Earth motion
+    # ToDo: Not happy with this at all
+    phase_wave = f * 0.0
 
-    Fp, Fc = _patternFunction(theta, phi, psi, tRef, DetectorCoordinates, alpha_grad=alpha)
-
-    hp, hc = waveform.hphc(model, f, mc, eta, chi1, chi2, dL, iota)
-
-    hp = @. hp * Fp * exp(1im * (phiD + 2.0 * pi * f * (tcoal * 3600.0 * 24.0) - phiCoal))
-    hc = @. hc * Fc * exp(1im * (phiD + 2.0 * pi * f * (tcoal * 3600.0 * 24.0) - phiCoal))
-
-    return hp + hc
+    strain_det = Strain(
+        model,
+        DetectorCoordinates,
+        pol_det,
+        phase_wave,
+        f,
+        mc,
+        eta,
+        chi1,
+        chi2,
+        dL,
+        theta,
+        phi,
+        iota,
+        psi,
+        tcoal,
+        phiCoal,
+        Lambda1,
+        Lambda2,
+        useEarthMotion = useEarthMotion
+    )
+        
+    return strain_det
 
 end
 

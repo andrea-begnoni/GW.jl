@@ -3,52 +3,46 @@
 ####################################################
 
 """
-Returns a dictionary with all contributions to the GW, devided in polarizations, as 
-a function of frequency, given the events parameters.  
-
-    Pol(PhenomHM(), mc, eta, chi1, chi2, dL, iota)
-
-#### Input arguments
--  `model`   : Model type, it indicates the waveform model to be used.
--  `f`       : frequency of the GW signal, Hz
--  `mc`      : chirp mass, solar masses
--  `eta`     : symmetric mass ratio
--  `chi1`    : dimensionless spin component of the first BH
--  `chi2`    : dimensionless spin component of the second BH
--  `dL`      : luminosity distance, Gpc
--  `iota`    : Inclination angle of the binary. In radians.
-
-#### Return:
--  Dict{String, Union{Array{Float64},Array{ForwardDiff.Dual}}} with two entries "plus" and "cross". 
-   Each entry represents a polarization of the gravitational wave, according to the handed event parameters.
-   The length of the array is the length of the input `f`.
-   
-#### Example:
-    f = [10.0, 20.0, 30.0, 40.0, 50.0]
-    pol = Pol(PhenomHM(), f, 10., 0.20, 0.1, 0.2, 10., 1.)
-    hp = pol["plus"]
-    hc = pol["cross"]
+ToDo: Need documentation
 """
-function Pol(
-    model::PhenomHM,
-    f::Array{Float64},
-    mc::Union{Float64,ForwardDiff.Dual},
-    eta::Union{Float64,ForwardDiff.Dual},
-    chi1::Union{Float64,ForwardDiff.Dual},
-    chi2::Union{Float64,ForwardDiff.Dual},
-    dL::Union{Float64,ForwardDiff.Dual},
-    iota::Union{Float64,ForwardDiff.Dual},
-    Lambda1::Union{Float64,ForwardDiff.Dual}=0.,
-    Lambda2::Union{Float64,ForwardDiff.Dual}=0.
-)    
-
+function PolAbs(model::PhenomHM,
+    f::AbstractVector,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    iota,
+    Lambda1=0.0,
+    Lambda2=0.0
+)
     hp, hc = waveform.hphc(model, f, mc, eta, chi1, chi2, dL, iota)
 
-    return Dict(
-        "plus"  => hp,
-        "cross" => hc
-    )
+    return [abs.(hp), abs.(hc)]
     
+end
+
+"""
+ToDo: Need documentation
+"""
+function Pol(model::PhenomHM,
+    f::AbstractVector,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    iota,
+    Lambda1=0.0,
+    Lambda2=0.0
+)
+    hp, hc = waveform.hphc(model, f, mc, eta, chi1, chi2, dL, iota)
+    
+    # Return polarization with correct relative phase.
+    # ATTENTION: For this waveform, the complete phase is already included 
+    # in hphc() function. 
+    return [hp, hc]
+
 end
 
 """
