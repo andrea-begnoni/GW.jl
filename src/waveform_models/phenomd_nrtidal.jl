@@ -31,36 +31,23 @@ a function of frequency, given the events parameters.
     hp = pol["plus"]
     hc = pol["cross"]
 """
-function Pol(
+function PolAbs(
     model::PhenomD_NRTidal,
-    f::Array{Float64},
-    mc::Union{Float64,ForwardDiff.Dual},
-    eta::Union{Float64,ForwardDiff.Dual},
-    chi1::Union{Float64,ForwardDiff.Dual},
-    chi2::Union{Float64,ForwardDiff.Dual},
-    dL::Union{Float64,ForwardDiff.Dual},
-    Lambda1::Union{Float64,ForwardDiff.Dual},
-    Lambda2::Union{Float64,ForwardDiff.Dual};
+    f::AbstractVector,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    iota,
+    Lambda1,
+    Lambda2;
     fcutPar = 0.2,
     fInsJoin_Ampl = 0.014,
     fInsJoin_PHI = 0.018,
     GMsun_over_c3 = uc.GMsun_over_c3,
     GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc 
 )
-
-    phi = Phi(
-        model,
-        f,
-        mc,
-        eta,
-        chi1,
-        chi2,
-        Lambda1,
-        Lambda2,
-        fInsJoin_PHI = fInsJoin_PHI,
-        fcutPar = fcutPar,
-        GMsun_over_c3 = GMsun_over_c3
-    )
 
     amp = Ampl(
         model,
@@ -78,15 +65,55 @@ function Pol(
         GMsun_over_c2_Gpc = GMsun_over_c2_Gpc
     )
 
-    # complex wave polarizations (i.e. amplitude and phase information)
-    hp = amp .* exp.(1im .* phi)
-    hc = 1im .* amp .* exp.(1im .* phi)
+    # take into account inclination 
+    hp = @. 0.5 * (1.0 + (cos(iota))^2) .* amp
+    hc = @. cos(iota) .* amp
 
-    return Dict(
-        "plus"  => hp,
-        "cross" => hc
-    )
+    return [hp, hc]
     
+end
+
+"""
+ToDo: Need documentation
+"""
+function Pol(
+    model::PhenomD_NRTidal,
+    f::AbstractVector,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    iota,
+    Lambda1,
+    Lambda2;
+    fcutPar = 0.2,
+    fInsJoin_Ampl = 0.014,
+    fInsJoin_PHI = 0.018,
+    GMsun_over_c3 = uc.GMsun_over_c3,
+    GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc 
+)
+
+    hp, hc = PolAbs(
+        model,
+        f,
+        mc,
+        eta,
+        chi1,
+        chi2,
+        dL,
+        iota,
+        Lambda1,
+        Lambda2;
+        fcutPar = fcutPar,
+        fInsJoin_Ampl = fInsJoin_Ampl,
+        fInsJoin_PHI = fInsJoin_PHI,
+        GMsun_over_c3 = GMsun_over_c3,
+        GMsun_over_c2_Gpc = GMsun_over_c2_Gpc 
+    )
+
+    return [hp, 1im .* hc]
+
 end
 
 """

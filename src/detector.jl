@@ -21,7 +21,7 @@ using Dates
 export DetectorStructure, DetectorCoordinates, Detector, _readASD, _readPSD, getCoords, CE1Id_coordinates, CE1Id, CE2NM_coordinates,
          CE2NM, CE2NSW_coordinates, CE2NSW, ETS_coodinates, ETS, ETLS_coodinates, ETLS, ETMR_coordinates, ETMR, ETLMR_coordinates, ETLMR, 
          LIGO_L_coordinates, LIGO_L, LIGO_H_coordinates, LIGO_H, VIRGO_coordinates, VIRGO, KAGRA_coordinates, KAGRA, _available_detectors,
-          _define_events, _deltLoc, _patternFunction, AmplitudeDet, PhaseDet, Strain, SNR, FisherMatrix, _read_Fishers_SNRs
+          _define_events, _deltLoc, _patternFunction, PolarizationDet, PhaseDet, Strain, SNR, FisherMatrix, _read_Fishers_SNRs
 
 # Here we define all the structures used inside this module
 # define the detector structures
@@ -404,7 +404,7 @@ end
 """
 Compute the amplitude of the GW signal projected on the detector tensor, given a waveform model and a detector
 
-    AmplitudeDet(model, DetectorCoordinates, f, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, Lambda1, Lambda2, alpha = 0., useEarthMotion = false)
+    PolarizationDet(model, DetectorCoordinates, f, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, Lambda1, Lambda2, alpha = 0., useEarthMotion = false)
 
     #### Input arguments:
     -  `model` : structure, containing the waveform model
@@ -434,10 +434,44 @@ Compute the amplitude of the GW signal projected on the detector tensor, given a
 
     #### Example:
     ```julia
-    Ap, Ac = AmplitudeDet(PhenomD(), CE1Id_coordinates, 1:100, 10.0, 0.25, 0.5, 0.5, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5)
+    Ap, Ac = PolarizationDet(PhenomD(), CE1Id_coordinates, 1:100, 10.0, 0.25, 0.5, 0.5, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5)
     ```
 """
-function AmplitudeDet(model::Model,
+function PolarizationDet(model::Model,
+    DetectorCoordinates::DetectorStructure,
+    pol::AbstractArray,
+    f::AbstractArray,
+    mc::Union{Float64,ForwardDiff.Dual},
+    eta::Union{Float64,ForwardDiff.Dual},
+    dL::Union{Float64,ForwardDiff.Dual},
+    theta::Union{Float64,ForwardDiff.Dual},
+    phi::Union{Float64,ForwardDiff.Dual},
+    iota::Union{Float64,ForwardDiff.Dual},
+    psi::Union{Float64,ForwardDiff.Dual},
+    tcoal::Union{Float64,ForwardDiff.Dual};
+    alpha = 0.0,
+    useEarthMotion = false
+)
+
+    if useEarthMotion   # technique from GWFAST
+        tcoalRescaled = tcoal .- waveform._tau_star(model, f, mc, eta) ./ (3600.0 * 24.0)
+        tRef =
+            tcoalRescaled .+
+            _deltLoc(theta, phi, tcoalRescaled, DetectorCoordinates) ./ (3600.0 * 24.0)
+    else
+        tRef = tcoal + _deltLoc(theta, phi, tcoal, DetectorCoordinates) / (3600.0 * 24.0)
+    end
+
+    Fp, Fc = _patternFunction(theta, phi, psi, tRef, DetectorCoordinates, alpha_grad=alpha)
+
+    Ap = @. Fp .* pol[1]
+    Ac = @. Fc .* pol[2]
+
+    return [Ap, Ac]
+
+end
+
+function PolarizationDet(model::Model,
     DetectorCoordinates::DetectorStructure,
     f::AbstractArray,
     mc::Union{Float64,ForwardDiff.Dual},
@@ -453,56 +487,49 @@ function AmplitudeDet(model::Model,
     Lambda1 = 0.0,
     Lambda2 = 0.0;
     alpha = 0.0,
-    useEarthMotion = false,
-    ampl_precomputation = nothing,
+    useEarthMotion = false
 )
 
-    if useEarthMotion   # technique from GWFAST
-        tcoalRescaled = tcoal .- waveform._tau_star(model, f, mc, eta) ./ (3600.0 * 24.0)
-        tRef =
-            tcoalRescaled .+
-            _deltLoc(theta, phi, tcoalRescaled, DetectorCoordinates) ./ (3600.0 * 24.0)
-    else
-        tRef = tcoal + _deltLoc(theta, phi, tcoal, DetectorCoordinates) / (3600.0 * 24.0)
-    end
+    pol = Pol(
+        model,
+        f,
+        mc,
+        eta, 
+        chi1,
+        chi2,
+        dL,
+        iota,
+        Lambda1,
+        Lambda2
+    )
 
-    Fp, Fc = _patternFunction(theta, phi, psi, tRef, DetectorCoordinates, alpha_grad=alpha)
-    
-    if ampl_precomputation === nothing
+    pol_det = PolarizationDet(
+        model,
+        DetectorCoordinates,
+        pol,
+        f,
+        mc,
+        eta,
+        dL,
+        theta,
+        phi,
+        iota,
+        psi,
+        tcoal;
+        alpha = alpha,
+        useEarthMotion = useEarthMotion
+    )
 
-        Ampl = waveform.Ampl(
-            model,
-            f,
-            mc,
-            eta,
-            chi1,
-            chi2,
-            dL,
-            Lambda1,
-            Lambda2
-        )
-
-    else
-
-        Ampl = ampl_precomputation
-
-    end
-
-
-    Ap = @. Fp * 0.5 * (1.0 + (cos(iota))^2) .* Ampl
-    Ac = @. Fc * cos(iota) .* Ampl
-
-    return Ap, Ac
+    return pol_det
 
 end
-
 
 """
 Compute the amplitude of the GW signal projected on the detector tensor, given a waveform model and a detector.
 This function is for the HM model, since inside the function we can not rely on computing the amplitude separately from the phase,
 we need to compute the full hp and hc.
 
-    AmplitudeDet(PhenomHM(), DetectorCoordinates, f, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, Lambda1, Lambda2, alpha = 0., useEarthMotion = false)
+    PolarizationDet(PhenomHM(), DetectorCoordinates, f, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, Lambda1, Lambda2, alpha = 0., useEarthMotion = false)
 
     #### Input arguments:
     -  `model` : structure, containing the waveform model, needs to be PhenomHM
@@ -532,10 +559,10 @@ we need to compute the full hp and hc.
 
     #### Example:
     ```julia
-    Ap, Ac = AmplitudeDet(PhenomD(), CE1Id_coordinates , 1:100, 10.0, 0.25, 0.5, 0.5, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5)
+    Ap, Ac = PolarizationDet(PhenomD(), CE1Id_coordinates , 1:100, 10.0, 0.25, 0.5, 0.5, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5)
     ```
 """
-function AmplitudeDet(
+function PolarizationDet(
     model::PhenomHM,
     DetectorCoordinates::DetectorStructure,
     f::AbstractArray,
@@ -580,6 +607,7 @@ function AmplitudeDet(
 end
 
 """
+ToDo: New documentation for this function
 This function computes the phase of the waveform seen by the detector, given a waveform model. It already includes the phase due to the Earth motion.
 
     PhaseDet(model, DetectorCoordinates, f, mc, eta, chi1, chi2, theta, phi, tcoal, phiCoal, DetectorCoordinates, Lambda1, Lambda2; useEarthMotion = false, phase_precomputation = nothing)
@@ -640,33 +668,60 @@ function PhaseDet(
         tcoalRescaled = tcoal
     end
 
-
     phiD = (2.0 * pi .* f) .* _deltLoc(theta, phi, tcoalRescaled, DetectorCoordinates) # phase due to Earth motion
 
-    if phase_precomputation === nothing
-
-        Phi = waveform.Phi(
-            model,
-            f,
-            mc,
-            eta,
-            chi1,
-            chi2,
-            Lambda1,
-            Lambda2
-        )
-
-    else
-        Phi = phase_precomputation
-    end
-
-    return @. 2.0 * pi * (tcoal * 3600.0 * 24.0) .* f .- phiCoal .- Phi .+ phiD
+    return @. 2.0 * pi * (tcoal * 3600.0 * 24.0) .* f .- phiCoal  .+ phiD #.- Phi
 
 
 end
 
+
 """
-This function computes the full strain (complex) as a function of the parameters, at given frequencies, at detector location, as measured by the detector, since it include the pattern functions, via AmplitudeDet and PhaseDet.
+ToDo: Documentation
+"""
+function Strain(model::Model,
+    DetectorCoordinates::DetectorStructure,
+    pol::AbstractArray,
+    phase::AbstractArray,
+    f::AbstractArray,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    theta,
+    phi,
+    psi,
+    tcoal,
+    phiCoal,
+    Lambda1 = 0.0,
+    Lambda2 = 0.0;
+    useEarthMotion = false,
+)
+
+    phase_det = PhaseDet(
+        model,
+        DetectorCoordinates,
+        f,
+        mc,
+        eta,
+        chi1,
+        chi2,
+        theta,
+        phi,
+        tcoal,
+        phiCoal,
+        Lambda1,
+        Lambda2,
+        useEarthMotion = useEarthMotion
+    )
+        
+    return @. (pol[1] .+ pol[2]) .* exp.(1im .* (phase_det .- phase))
+
+end
+
+"""
+ToDo: Documentation
+This function computes the full strain (complex) as a function of the parameters, at given frequencies, at detector location, as measured by the detector, since it include the pattern functions, via PolarizationDet and PhaseDet.
 
     Strain(model, DetectorCoordinates,  f, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1, Lambda2, useEarthMotion=false, alpha=0.)
 
@@ -702,7 +757,6 @@ This function computes the full strain (complex) as a function of the parameters
     ```julia
     strain = Strain(PhenomD(), CE1Id_coordinates, 1:100, 10.0, 0.25, 0.5, 0.5, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5)
     ```
-
 """
 function Strain(model::Model,
     DetectorCoordinates::DetectorStructure,
@@ -721,12 +775,10 @@ function Strain(model::Model,
     Lambda1 = 0.0,
     Lambda2 = 0.0;
     useEarthMotion = false,
-    alpha = 0.0,
-    ampl_precomputation = nothing,
-    phase_precomputation = nothing,
+    alpha = 0.0
 )
 
-    Ap, Ac = AmplitudeDet(
+    pol_det = PolarizationDet(
         model,
         DetectorCoordinates,
         f,
@@ -743,33 +795,46 @@ function Strain(model::Model,
         Lambda1,
         Lambda2,
         alpha = alpha,
-        useEarthMotion = useEarthMotion,
-        ampl_precomputation = ampl_precomputation,
+        useEarthMotion = useEarthMotion
     )
-    Psi = PhaseDet(
-            model,
-            DetectorCoordinates,
-            f,
-            mc,
-            eta,
-            chi1,
-            chi2,
-            theta,
-            phi,
-            tcoal,
-            phiCoal,
-            Lambda1,
-            Lambda2,
-            useEarthMotion = useEarthMotion,
-            phase_precomputation = phase_precomputation,
-        ) 
 
-    return (Ap .+ 1im .* Ac) .* exp.(Psi .* 1im)
+    phase_wave = Phi(
+        model,
+        f,
+        mc,
+        eta,
+        chi1,
+        chi2,
+        Lambda1,
+        Lambda2,
+    )
+
+    strain_det = Strain(
+        model,
+        DetectorCoordinates,
+        pol_det,
+        phase_wave,
+        f,
+        mc,
+        eta,
+        chi1,
+        chi2,
+        theta,
+        phi,
+        psi,
+        tcoal,
+        phiCoal,
+        Lambda1,
+        Lambda2,
+        useEarthMotion = useEarthMotion
+    )
+        
+    return strain_det
 
 end
 
 """
-This function computes the full strain (complex) as a function of the parameters, at given frequencies, at detector location, as measured by the detector, since it include the pattern functions, via AmplitudeDet and PhaseDet.
+This function computes the full strain (complex) as a function of the parameters, at given frequencies, at detector location, as measured by the detector, since it include the pattern functions, via PolarizationDet and PhaseDet.
 
     Strain(PhenomHM(), f, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, DetectorCoordinates, Lambda1, Lambda2, useEarthMotion=false, alpha=0.)
 
@@ -852,7 +917,6 @@ end
 
 
 """
-    
 Compute the *signal-to-noise-ratio*, SNR, as a function of the parameters of the event, as measured a single detector. 
 The SNR is computed as the square root of the integral of the signal-to-noise ratio squared.
 The integral is computed using the trapezoidal rule.
@@ -933,53 +997,38 @@ function SNR(model::Model,
     )
 
         if ampl_precomputation === nothing
-            if typeof(model) == PhenomHM
-                ampl_precomputation = waveform.hphc(
-                    model,
-                    fgrid,
-                    mc,
-                    eta,
-                    chi1,
-                    chi2,
-                    dL,
-                    iota
-                )
-            else 
-                ampl_precomputation = waveform.Ampl(
-                    model,
-                    fgrid,
-                    mc,
-                    eta,
-                    chi1,
-                    chi2,
-                    dL,
-                    Lambda1,
-                    Lambda2
-                )
-            end
+           
+            ampl_precomputation = PolAbs(
+                model,
+                f,
+                mc,
+                eta,
+                chi1,
+                chi2,
+                dL,
+                iota,
+                Lambda1,
+                Lambda2 
+            )
         else
             ampl_precomputation = ampl_precomputation
         end
 
     if detector.shape == 'L' # in Julia '' indicates a char, while "" a string 
-        Aps, Acs = AmplitudeDet(
+        Aps, Acs = PolarizationDet(
             model,
             detectorCoordinates,
+            ampl_precomputation,
             fgrid,
             mc,
             eta,
-            chi1,
-            chi2,
             dL,
             theta,
             phi,
             iota,
             psi,
             tcoal,
-            Lambda1,
-            Lambda2,
             useEarthMotion = useEarthMotion,
-            ampl_precomputation = ampl_precomputation
         )
         Atot = Aps .* Aps .+ Acs .* Acs
         SNR = 2.0 * sqrt(trapz(fgrid, Atot ./ psdGrid))
@@ -990,46 +1039,38 @@ function SNR(model::Model,
         
         # The signal in 3 arms sums to zero for geometrical reasons, so we can use this to skip some calculations
 
-        Aps1, Acs1 = AmplitudeDet(
+        Aps1, Acs1 = PolarizationDet(
             model,
             detectorCoordinates,
+            ampl_precomputation,
             fgrid,
             mc,
             eta,
-            chi1,
-            chi2,
             dL,
             theta,
             phi,
             iota,
             psi,
             tcoal,
-            Lambda1,
-            Lambda2,
             alpha = 0.0,
             useEarthMotion = useEarthMotion,
-            ampl_precomputation = ampl_precomputation
         )
         Atot1 = Aps1 .* Aps1 .+ Acs1 .* Acs1
-        Aps2, Acs2 = AmplitudeDet(
+        Aps2, Acs2 = PolarizationDet(
             model,
             detectorCoordinates,
+            ampl_precomputation,
             fgrid,
             mc,
             eta,
-            chi1,
-            chi2,
             dL,
             theta,
             phi,
             iota,
             psi,
             tcoal,
-            Lambda1,
-            Lambda2,
             alpha = 60.0,
             useEarthMotion = useEarthMotion,
-            ampl_precomputation = ampl_precomputation
         )
         Atot2 = Aps2 .* Aps2 .+ Acs2 .* Acs2
         Aps3, Acs3 = -(Aps1 .+ Aps2), -(Acs1 .+ Acs2)
@@ -1094,30 +1135,18 @@ function SNR(model::Model,
     fgrid = 10 .^ (range(log10(fmin), log10(fcut), length = res))
 
     if precomputation == true 
-        if typeof(model) == PhenomHM
-            ampl_precomputation = waveform.hphc(
-                model,
-                fgrid,
-                mc,
-                eta,
-                chi1,
-                chi2,
-                dL,
-                iota
-            )
-        else
-            ampl_precomputation = waveform.Ampl(
-                model,
-                fgrid,
-                mc,
-                eta,
-                chi1,
-                chi2,
-                dL,
-                Lambda1,
-                Lambda2
-            )
-        end
+        ampl_precomputation = waveform.PolAbs(
+            model,
+            fgrid,
+            mc,
+            eta,
+            chi1,
+            chi2,
+            dL,
+            iota,
+            Lambda1,
+            Lambda2;
+        )
     else 
         ampl_precomputation = nothing
     end
