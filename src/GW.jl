@@ -20,7 +20,8 @@ module GW
 # using LaTeXStrings
 
 include("utils.jl")
-include("waveform.jl")
+#include("waveform.jl")
+include("waveforms/waveforms_master.jl")
 include("detector.jl")
 include("catalog.jl")
 
@@ -31,7 +32,7 @@ using .catalog
 
 # export from waveform.jl
 export Ampl, Phi, _available_waveforms, _fcut, _finalspin, _radiatednrg, _tau_star, hphc
-export TaylorF2, PhenomD, PhenomD_NRTidal, PhenomHM, PhenomNSBH, PhenomXAS, Model
+export TaylorF2, PhenomD, PhenomD_NRTidal, PhenomHM, PhenomNSBH, PhenomXAS, Model, PhenomXHM
 
 
 # export from detector.jl

@@ -536,7 +536,7 @@ we need to compute the full hp and hc.
     ```
 """
 function AmplitudeDet(
-    model::PhenomHM,
+    model::Union{PhenomHM,PhenomXHM},
     DetectorCoordinates::DetectorStructure,
     f::AbstractArray,
     mc::Union{Float64,ForwardDiff.Dual},
@@ -807,7 +807,7 @@ This function computes the full strain (complex) as a function of the parameters
 
 
 """
-function Strain(model::PhenomHM,
+function Strain(model::Union{PhenomHM,PhenomXHM},
     DetectorCoordinates::DetectorStructure,
     f::AbstractArray,
     mc,
@@ -933,7 +933,7 @@ function SNR(model::Model,
     )
 
         if ampl_precomputation === nothing
-            if typeof(model) == PhenomHM
+            if typeof(model) == PhenomHM || typeof(model) == PhenomXHM
                 ampl_precomputation = waveform.hphc(
                     model,
                     fgrid,
@@ -1094,7 +1094,7 @@ function SNR(model::Model,
     fgrid = 10 .^ (range(log10(fmin), log10(fcut), length = res))
 
     if precomputation == true 
-        if typeof(model) == PhenomHM
+        if typeof(model) == PhenomHM || typeof(model) == PhenomXHM
             ampl_precomputation = waveform.hphc(
                 model,
                 fgrid,
@@ -1186,7 +1186,7 @@ function SNR(model::Model,
     nEvents = length(mc)
     SNRs = Vector{Float64}(undef, nEvents)
 
-    if typeof(model) == PhenomD || typeof(model) == PhenomHM || typeof(model) == TaylorF2 || typeof(model) == PhenomXAS
+    if typeof(model) == PhenomD || typeof(model) == PhenomHM || typeof(model) == TaylorF2 || typeof(model) == PhenomXAS || typeof(model) == PhenomXHM
         Lambda1 = zeros(nEvents)
         Lambda2 = zeros(nEvents)
 
