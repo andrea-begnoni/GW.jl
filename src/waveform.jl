@@ -1,3 +1,4 @@
+#! format: off
 module waveform
 ### This is the first module in the pipeline (after the catalog generation), it computes the waveform
 
