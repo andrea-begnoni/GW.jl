@@ -32,6 +32,16 @@ MRSUN = GMsun_over_c2
 
 ##############################################################################
 
+polarization_dict = Dict(
+    "plus" =>  [1 0 0; 0 -1 0; 0 0 0],
+    "cross" => [0 1 0; 1 0 0; 0 0 0],
+    "x" => [0 0 1; 0 0 0; 1 0 0],
+    "y" => [0 0 0; 0 0 1; 0 1 0],
+    "breather" => [1 0 0; 0 1 0; 0 0 0],
+    "longitudinal" => [0 0 0; 0 0 0; 0 0 sqrt(2)]
+)
+
+##############################################################################
 
 r"""
 Compute the dimensionless tidal deformability combinations L"\tilde{Lambda}" and L"\delta\tilde{Lambda}", defined in `arXiv:1402.5156 <https://arxiv.org/abs/1402.5156>`_ eq. (5) and (6), as a function of the dimensionless tidal deformabilities of the two objects and the symmetric mass ratio.

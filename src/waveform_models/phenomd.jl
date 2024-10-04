@@ -118,7 +118,8 @@ function _readQNMgrid_fdamp(pathWF::String)
     return readdlm(pathWF * "QNMData_fdamp.txt")[:, 1]   # [:,1] is to make it a 1D array instead of a 2D array
 end
 
-""" helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
+""" 
+helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
 """
 function Phi(model::PhenomD,
     f,

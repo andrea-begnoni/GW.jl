@@ -75,6 +75,7 @@ function Pol(model::TaylorF2,
     return [hp, 1im .* hc]
 
 end
+
 """
 Returns the number of parameter of a struct<:Model as integer number. 
 """
