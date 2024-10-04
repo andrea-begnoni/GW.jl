@@ -229,7 +229,6 @@ function SkyArea(covMatrix::Array{Float64,3}, thetaCatalog::Array; percent_level
     return skyArea
 end
 
-# to fix description
 """ 
 Calculate the optimal angle for the orientation of the detector to maximize the signal from CBC gravitational wave. 
 The function can be used in the definition of 2 detectors network.
@@ -249,7 +248,7 @@ If you want to use it for a different orientation, you need to add the angle of 
     orientation_CBC = _orientationBigCircle(0.1, 0.2, 0.3, 0.4)
  ```
 """ 
-function _azimuth_angles(det1, det2)
+function _orientationBigCircle(det1, det2)
 
     lat1 = det1.latitude_rad
     long1 = det1.longitude_rad

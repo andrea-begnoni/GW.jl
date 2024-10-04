@@ -435,7 +435,7 @@ The code also saves the redshift in the catalog, in case you want to use it for 
 
 
 """
-function GenerateCatalog(nEvents, population; time_delay_in_Myr = 10., seed_par = nothing, SFR = "Madau&Dickinson", name_catalog = nothing, local_rate = nothing)
+function GenerateCatalog(nEvents::Int, population::String; time_delay_in_Myr = 10., seed_par = nothing, SFR = "Madau&Dickinson", name_catalog = nothing, local_rate = nothing)
 
     if seed_par === nothing
         seed = rand(1:10000)
@@ -807,7 +807,7 @@ function GenerateCatalog(nEvents, population; time_delay_in_Myr = 10., seed_par 
         attributes(file)["population"] = population
         attributes(file)["time_delay_in_Myrs"] = time_delay_in_Myr
         attributes(file)["SFR"] = SFR
-        attributes(file)["total_number_sources_yr"] = total_number_sources_yr
+        attributes(file)["total_number_sources_yr"] = Int(round(total_number_sources_yr, digits=0))
         attributes(file)["local_rate"] = local_rate
         attributes(file)["date"] = date_format
 

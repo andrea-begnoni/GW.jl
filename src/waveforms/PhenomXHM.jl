@@ -193,8 +193,12 @@ function hphc(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, iota;
     etaInv = 1 ./ eta
     sqroot = sqrt(eta)
 
+    typeofFD = typeof(eta) # This is the type of this variable when ForwardDiff is used, 
+    # this is used to define the type of all the variables inside this function, keeping track of the Tag of the variables
 
-
+    if debug == true
+        println("typeofFD = $typeofFD")
+    end
 
     #distance = dL * uGpc        #distance is dL in meters
     Mtot = M 
@@ -300,9 +304,7 @@ function hphc(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, iota;
     fdamp_44 = (0.014986847152355699 - 0.01722587715950451*afinal - 0.0016734788189065538*x2 + 0.0002837322846047305*x3 + 0.002510528746148588*x4 + 0.00031983835498725354*x5 + 0.000812185411753066*x6)/(1 - 1.1350205970682399*afinal - 0.0500827971270845*x2 + 0.13983808071522857*x4 + 0.051876225199833995*x6)/Mfinal
     fdamp_array = [fdamp_21, fdamp_33, fdamp_32, fdamp_44]
 
-    ### First calculate the 22 mode
-    hp = zeros(Complex{Float64}, len)
-    hc = zeros(Complex{Float64}, len)
+
 
     ### 22 mode
 
@@ -335,14 +337,27 @@ function hphc(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, iota;
     factorp = 0.5 * (Ym +  Ystar);
     factorc = 1im * 0.5 * ( Ym -  Ystar);
 
-    htildelm = zeros(Complex{Float64}, len)
+
+
     htildelm =  @. -1. *ampl_22 * exp(1im * phase_22) /factor_22 
-    wf22 = @. ampl_22  /factor_22 * exp(1im * phase_22);
+    wf22 = - htildelm
+
+    ### First calculate the 22 mode
+    hp = Vector{Complex{typeofFD}}(undef, len) #initialize the vector
+    hc = Vector{Complex{typeofFD}}(undef, len)
+    if debug == true
+        println("htildelm1 =", htildelm[1])
+        println("hp1 =", hp[1])
+    end
+
     for j in 1:len
         hlm = htildelm[j];
-        hp[j] += (factorp * hlm);
-        hc[j] += (factorc * hlm);
+        hp[j] = (factorp * hlm);
+        hc[j] = (factorc * hlm);
     end
+
+
+
 
     if debug == true
         println()
@@ -370,11 +385,13 @@ function hphc(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, iota;
     im_l3m2lp3 = (afinal*(12.45701482868677 - 29.398484595717147*afinal + 18.26221675782779*x2 + 1.9308599142669403*x3 - 3.159763242921214*x4 - 0.0910871567367674*x5))/(345.52914639836257 - 815.4349339779621*afinal + 538.3888932415709*x2 - 69.3840921447381*x4 + 1. *x6);
     
 
-    mixingCoeffs = Vector{ComplexF64}(undef,4)
-    mixingCoeffs[1]= re_l2m2lp2 + 1im * im_l2m2lp2 # not used
-    mixingCoeffs[2]= re_l2m2lp3 + 1im * im_l2m2lp3 # not used
-    mixingCoeffs[3]= re_l3m2lp2 + 1im * im_l3m2lp2
-    mixingCoeffs[4]= re_l3m2lp3 + 1im * im_l3m2lp3
+
+    mixingCoeffs1 = re_l2m2lp2 + 1im * im_l2m2lp2 # not used
+    mixingCoeffs2 = re_l2m2lp3 + 1im * im_l2m2lp3 # not used
+    mixingCoeffs3 = re_l3m2lp2 + 1im * im_l3m2lp2
+    mixingCoeffs4 = re_l3m2lp3 + 1im * im_l3m2lp3
+
+    mixingCoeffs = [mixingCoeffs1, mixingCoeffs2, mixingCoeffs3, mixingCoeffs4]
   
     # Adjust conventions so that they match the ones used for the hybrids
     mixingCoeffs[3]= -1. * mixingCoeffs[3];
@@ -413,7 +430,10 @@ function hphc(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, iota;
         if debug == true
             println("ell_emm: ", ell_emm) 
         end
-        htildelm__ = zeros(Complex{Float64}, len)  
+
+
+        htildelm__ = Vector{Complex{typeofFD}}(undef, len)
+        
         ModeMixingCoeffs = zeros(5)
         alpha0, alpha2, alphaL = 0., 0., 0.
         index += 1
@@ -837,8 +857,8 @@ function hphc(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, iota;
             function GetSpheroidalCoefficients(mc, eta, chi1, chi2, nCollocPtsRDPhase, fring, fdamp, fring_22, fdamp_22, S, dchi, Seta, Phase22, ModeMixingCoeffs, fRef)
 
                 nCollocationPts_RD_Phase = nCollocPtsRDPhase;
-                CollocValuesPhaseRingdown= zeros(nCollocationPts_RD_Phase)
-                CollocFreqsPhaseRingdown= zeros(nCollocationPts_RD_Phase)
+                CollocValuesPhaseRingdown= Vector{typeofFD}(undef, nCollocationPts_RD_Phase)
+                CollocFreqsPhaseRingdown= Vector{typeofFD}(undef, nCollocationPts_RD_Phase)
 
 
                 #********************* RINGDOWN PHASE COLLOCATION POINTS *****************
@@ -851,7 +871,7 @@ function hphc(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, iota;
                 fringlm = fring 
                 fdamplm = fdamp
                 fring22 = fring_22
-                CollocationPointsFreqsPhaseRD = zeros(nCollocationPts_RD_Phase) #4
+                CollocationPointsFreqsPhaseRD = Vector{typeofFD}(undef, nCollocationPts_RD_Phase) #4
 
                 # version 122019
                 CollocationPointsFreqsPhaseRD[1] = fring22;
@@ -876,7 +896,7 @@ function hphc(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, iota;
                 RD_Phase_32_p5 = 0.
 
                 b = [RD_Phase_32_p1, RD_Phase_32_p2, RD_Phase_32_p3, RD_Phase_32_p4] # 4 coefficients not 5
-                A = zeros(nCollocationPts_RD_Phase, nCollocationPts_RD_Phase)
+                A = Matrix{typeofFD}(undef, nCollocationPts_RD_Phase, nCollocationPts_RD_Phase)
                 for i in 1:nCollocationPts_RD_Phase
 
                     CollocFreqsPhaseRingdown[i]  = CollocationPointsFreqsPhaseRD[i];
@@ -1006,10 +1026,10 @@ function hphc(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, iota;
 
         end
 
-        PNAmplitudeInsp = zeros(3)
-        PNAmplitudeInsp[1] = Inspiral_PNAmp_Ansatz(CollocationPointsFreqsAmplitudeInsp[1])
-        PNAmplitudeInsp[2] = Inspiral_PNAmp_Ansatz(CollocationPointsFreqsAmplitudeInsp[2])
-        PNAmplitudeInsp[3] = Inspiral_PNAmp_Ansatz(CollocationPointsFreqsAmplitudeInsp[3])
+        PNAmplitudeInsp1 = Inspiral_PNAmp_Ansatz(CollocationPointsFreqsAmplitudeInsp[1])
+        PNAmplitudeInsp2 = Inspiral_PNAmp_Ansatz(CollocationPointsFreqsAmplitudeInsp[2])
+        PNAmplitudeInsp3 = Inspiral_PNAmp_Ansatz(CollocationPointsFreqsAmplitudeInsp[3])
+        PNAmplitudeInsp = [PNAmplitudeInsp1, PNAmplitudeInsp2, PNAmplitudeInsp3]
 
         #### from IMRPhenomXHM_Get_Inspiral_Amp_Coefficients
 
@@ -1023,11 +1043,11 @@ function hphc(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, iota;
         v3 = (Insp_v3 - PNAmplitudeInsp[3]) / PNdominant / f3^(-7/6)
 
 
-        InspiralCoefficient = zeros(3) #CollocationPointsValuesAmplitudeInsp
-        InspiralCoefficient[1] =  (finsp^(7/3)*(-(f1^3 * f3^(8/3) * v2) + f1^(8/3) * f3^3 * v2 + f2^3 * (f3^(8/3) * v1 - f1^(8/3) * v3) + f2^(8/3) * (-(f3^3 * v1) + f1^3 * v3))) / (f1^(7/3) * (f1^(1/3) - f2^(1/3)) * f2^(7/3) * (f1^(1/3) - f3^(1/3)) * (f2^(1/3) - f3^(1/3)) * f3^(7/3))
-        InspiralCoefficient[2] =  (finsp^(8/3)*(f1^3 * f3^(7/3) * v2 - f1^(7/3) * f3^3 * v2 + f2^3 * (-f3^(7/3) * v1 + f1^(7/3) * v3) + f2^(7/3) * (f3^3 * v1 - f1^3 * v3))) / (f1^(7/3) * (f1^(1/3) - f2^(1/3)) * f2^(7/3) * (f1^(1/3) - f3^(1/3)) * (f2^(1/3) - f3^(1/3)) * f3^(7/3))
-        InspiralCoefficient[3] = (finsp^3*(f1^(7/3)*(-f1^(1/3) + f3^(1/3))*f3^(7/3)*v2 + f2^(7/3)*(-(f3^(8/3)*v1) + f1^(8/3)*v3) + f2^(8/3)*(f3^(7/3)*v1 - f1^(7/3)*v3)))/(f1^(7/3)*(f1^(1/3) - f2^(1/3))*f2^(7/3)*(f1^(1/3) - f3^(1/3))*(f2^(1/3) - f3^(1/3))*f3^(7/3));
-
+        #InspiralCoefficient = zeros(3) #CollocationPointsValuesAmplitudeInsp
+        InspiralCoefficient1 =  (finsp^(7/3)*(-(f1^3 * f3^(8/3) * v2) + f1^(8/3) * f3^3 * v2 + f2^3 * (f3^(8/3) * v1 - f1^(8/3) * v3) + f2^(8/3) * (-(f3^3 * v1) + f1^3 * v3))) / (f1^(7/3) * (f1^(1/3) - f2^(1/3)) * f2^(7/3) * (f1^(1/3) - f3^(1/3)) * (f2^(1/3) - f3^(1/3)) * f3^(7/3))
+        InspiralCoefficient2 =  (finsp^(8/3)*(f1^3 * f3^(7/3) * v2 - f1^(7/3) * f3^3 * v2 + f2^3 * (-f3^(7/3) * v1 + f1^(7/3) * v3) + f2^(7/3) * (f3^3 * v1 - f1^3 * v3))) / (f1^(7/3) * (f1^(1/3) - f2^(1/3)) * f2^(7/3) * (f1^(1/3) - f3^(1/3)) * (f2^(1/3) - f3^(1/3)) * f3^(7/3))
+        InspiralCoefficient3 = (finsp^3*(f1^(7/3)*(-f1^(1/3) + f3^(1/3))*f3^(7/3)*v2 + f2^(7/3)*(-(f3^(8/3)*v1) + f1^(8/3)*v3) + f2^(8/3)*(f3^(7/3)*v1 - f1^(7/3)*v3)))/(f1^(7/3)*(f1^(1/3) - f2^(1/3))*f2^(7/3)*(f1^(1/3) - f3^(1/3))*(f2^(1/3) - f3^(1/3))*f3^(7/3));
+        InspiralCoefficient = [InspiralCoefficient1, InspiralCoefficient2, InspiralCoefficient3]
 
 
         ##### from IMRPhenomXHM_RD_Amp_Coefficients
@@ -1049,8 +1069,8 @@ function hphc(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, iota;
         end
 
 
-
-        RDCoefficient = zeros(5)
+        FDtype = typeof(eta)
+        RDCoefficient = Vector{FDtype}(undef, 5)
         if ell_emm == 32    # IMRPhenomXHMRingdownAmpVersion = 1
             RDCoefficient[1] = abs(alambda)
             RDCoefficient[2] = lambda
@@ -1130,8 +1150,8 @@ function hphc(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, iota;
         if nCoefficientsRDAux > 0 && ModeMixingOn == true  # only mode 32 has mixing, so it enters here
 
             # from IMRPhenomXHM_RDAux_Amp_Coefficients
-            CollocationPointsValuesAmplitudeRDAux = zeros(4)
-            CollocationPointsFreqsAmplitudeRDAux = zeros(4)
+            CollocationPointsFreqsAmplitudeRDAux = Vector{typeofFD}(undef, 4)
+            CollocationPointsValuesAmplitudeRDAux = Vector{typeofFD}(undef, 4)
 
             CollocationPointsValuesAmplitudeRDAux[1] = abs(rdaux1)
             CollocationPointsValuesAmplitudeRDAux[2] = abs(rdaux2)
@@ -1156,7 +1176,7 @@ function hphc(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, iota;
         
             #// b is the vector with the values of collocation points
             b = CollocationPointsValuesAmplitudeRDAux
-            A = zeros(nCoefficientsRDAux, nCoefficientsRDAux);
+            A = Matrix{typeofFD}(undef, nCoefficientsRDAux, nCoefficientsRDAux)
             for i in 1:nCoefficientsRDAux
 
                 #    A = (1, f1, f1^2, f1^3, f1^4)
@@ -1202,7 +1222,7 @@ function hphc(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, iota;
         # Define set of collocation points 
         # from IMRPhenomXHM_Intermediate_Amp_CollocationPoints
 
-        CollocationPointsFreqsAmplitudeInter = zeros(nCollocPtsInterAmp)
+        CollocationPointsFreqsAmplitudeInter = Vector{typeofFD}(undef, nCollocPtsInterAmp)
         # Define collocation points frequencies 
         if IMRPhenomXHMIntermediateAmpFreqsVersion == 0
             #// Equispaced. Get boundaries too
@@ -1282,7 +1302,7 @@ function hphc(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, iota;
 
         end
 
-        CollocationPointsValuesAmplitudeInter = zeros(nCollocPtsInterAmp)
+        CollocationPointsValuesAmplitudeInter = Vector{typeofFD}(undef, nCollocPtsInterAmp)
         if VersionCollocPtsInter[1] == 1
             CollocationPointsValuesAmplitudeInter[1] = Inspiral_Amp_Ansatz(fAmpMatchIN)
             tmpnCollocPts += 1;
@@ -1435,9 +1455,9 @@ function hphc(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, iota;
         end
 
 
-        b = zeros(nCollocPtsInterAmp)
-        x = zeros(nCollocPtsInterAmp)
-        A = zeros(nCollocPtsInterAmp, nCollocPtsInterAmp)
+        b = Vector{typeofFD}(undef, nCollocPtsInterAmp)
+        x = Vector{typeofFD}(undef, nCollocPtsInterAmp)
+        A = Matrix{typeofFD}(undef, nCollocPtsInterAmp, nCollocPtsInterAmp)
 
 
         #  Define linear system of equations: A x = b 
@@ -1498,7 +1518,7 @@ function hphc(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, iota;
         # We now solve the system A x = b via an LU decomposition. x is the solution vector 
         x = lu(A) \ b
 
-        InterCoefficient = zeros(nCoefficientsInter)
+        InterCoefficient = Vector{typeofFD}(undef, nCoefficientsInter)
         # The solution corresponds to the coefficients of the ansatz 
         for i in 1:nCoefficientsInter
             InterCoefficient[i] = x[i];
@@ -1554,7 +1574,7 @@ function hphc(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, iota;
 
         fcut = eta_factor*emm*0.5*fMECO
 
-        CollocationPointsFreqsPhaseInter = zeros(6)
+        CollocationPointsFreqsPhaseInter = Vector{typeofFD}(undef, 6)
         
         CollocationPointsFreqsPhaseInter[1]=fcut;
 
@@ -1626,7 +1646,7 @@ function hphc(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, iota;
         # ends here   
 
         #//for each collocation point, call fit giving the value of the phase derivative at that point
-        CollocationPointsValuesPhaseInter = zeros(6)
+        CollocationPointsValuesPhaseInter = Vector{typeofFD}(undef, 6)
         CollocationPointsValuesPhaseInter = [p1, p2, p3, p4, p5, p6]
         CollocationPointsValuesPhaseInter .+= DeltaT
     
@@ -1651,8 +1671,8 @@ function hphc(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, iota;
     
         fact=phiNorm/eta;
 
-        phi = zeros(13)
-        phiL = zeros(13)
+        phi = Vector{typeofFD}(undef, 13)
+        phiL = Vector{typeofFD}(undef, 13)
 
 
     
@@ -1718,16 +1738,16 @@ function hphc(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, iota;
     
         # GSL objects for solving system of equations via LU decomposition 
 
-        b = zeros(nCollocationPts_inter)
-        x = zeros(nCollocationPts_inter)
-        A = zeros(nCollocationPts_inter,nCollocationPts_inter)
+        b = Vector{typeofFD}(undef, nCollocationPts_inter)
+        x = Vector{typeofFD}(undef, nCollocationPts_inter)
+        A = Matrix{typeofFD}(undef, nCollocationPts_inter, nCollocationPts_inter)
     
     
         #// for high-spin cases: avoid sharp transitions for 21 mode by extending the inspiral region into the intermediate one
     
         if ell_emm==21 && STotR>=0.8
     
-            insp_vals = zeros(3)
+            insp_vals = Vector{typeofFD}(undef, 3)
             for i in 1:3
                 FF=two_over_m*CollocationPointsFreqsPhaseInter[i];
                 # _completePhaseDer is IMRPhenomX_dPhase_22
@@ -1843,7 +1863,7 @@ function hphc(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, iota;
             # // we first compute the full spherical-harmonic-basis waveforms at three points
             function SpheroidalToSpherical_Der(fcutRD)
                 
-                SphericalWF = zeros(ComplexF64, 3)
+                SphericalWF = Vector{Union{ComplexF64, ForwardDiff.Dual{T} where T}}(undef, 3)
                 fstep=0.0000001;
                 
                 for i in 1:3
@@ -2174,7 +2194,7 @@ function hphc(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, iota;
             factorc = 1im * 0.5 * ( Ym - minus1l * Ystar);
         
         
-            for j in 1:length(htildelm)
+            for j in eachindex(htildelm)    
               hlm = htildelm[j];
               hp[j] += (factorp * hlm);
               hc[j] += (factorc * hlm);
