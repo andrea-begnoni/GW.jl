@@ -12,12 +12,14 @@ using Interpolations
 using ForwardDiff
 using Roots
 
-export TaylorF2, PhenomD, PhenomD_NRTidal, PhenomHM, PhenomNSBH, PhenomXAS, Model
+export TaylorF2, PhenomD, PhenomD_NRTidal, PhenomHM, PhenomNSBH, PhenomXAS, Model, GrModel, BgrModel
 
-export Ampl, Phi, Pol, _npar, _event_type, _available_waveforms, _fcut, _finalspin, _radiatednrg, _tau_star, hphc
+export Ampl, Phi, Pol, _npar, _event_type, _available_waveforms, _fcut, _finalspin, _radiatednrg, _tau_star, _list_polarizations, hphc
 
 # Define an abstract type for the models
 abstract type Model end
+abstract type GrModel <: Model end    # Model for GrWaveforms
+abstract type BgrModel <: Model end   # Model for Wavefrom including beyond GR polarizations
 
 ##############################################################################
 #   Define general methods a waveform should have
@@ -67,10 +69,26 @@ function Pol(
         eta,
         chi1,
         chi2,
-        dL
+        dL,
+        itoa,
 )
     # Implementation specific to each model
     error("Phi not implemented for model: $(typeof(model)), or there is an error with the number of input parameters")
+end
+
+# Define a function to give an error message if the model is not implemented
+function PolAbs(
+    model::Model,
+    f,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    iota,
+)
+# Implementation specific to each model
+error("PhiAbs not implemented for model: $(typeof(model)), or there is an error with the number of input parameters")
 end
 
 # Define a function to give an error message if the model is not implemented
@@ -85,22 +103,40 @@ function _event_type(model::Model)
    error("_event_type not implemented for model: $(typeof(model)), or there is an error with the number of input parameters")
 end
 
+# Define a function to give an error message if the model is not implemented
+function _list_polarizations(model::Model) 
+    # Implementation specific to each model
+    error("_list_polarizations not implemented for model: $(typeof(model)), or there is an error with the number of input parameters")
+ end
+
+# All standard GR polarizations have the same polarizations
+"""
+Returns a list of the names of the polarizations of this waveform.
+
+    _list_polarizations(model)
+
+    The order of polarizations handed in this list is the same as the signals returned by Pol(model, ...). 
+"""
+function _list_polarizations(model::GrModel) 
+    return ["plus", "cross"]
+ end
+
 ##############################################################################
 #   available waveforms
 ##############################################################################
 
 # Define concrete types for each model
-struct PhenomD <: Model end
+struct PhenomD <: GrModel end
 
-struct PhenomHM <: Model end
+struct PhenomHM <: GrModel end
 
-struct TaylorF2 <: Model end
+struct TaylorF2 <: GrModel end
 
-struct PhenomD_NRTidal <: Model end
+struct PhenomD_NRTidal <: GrModel end
 
-struct PhenomNSBH <: Model end
+struct PhenomNSBH <: GrModel end
 
-struct PhenomXAS <: Model end
+struct PhenomXAS <: GrModel end
 
 function _available_waveforms()
     return ["TaylorF2", "PhenomD", "PhenomHM", "PhenomD_NRTidal", "PhenomNSBH", "PhenomXAS"]
