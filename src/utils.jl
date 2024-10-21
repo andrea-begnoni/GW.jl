@@ -30,6 +30,12 @@ MSUN = 1.988409902147041637325262574352366540e30  # kg
 """Geometrized nominal solar mass, m"""
 MRSUN = GMsun_over_c2
 
+Omega0_m = 0.3153
+
+Omega0_Lambda = 1 - Omega0_m
+
+H0 = 67.66 # km/s 1/Mpc
+
 
 ##############################################################################
 

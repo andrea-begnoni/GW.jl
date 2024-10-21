@@ -25,7 +25,7 @@ end
 Luminosity distance as a function of redshift, results in Mpc. clight in km/s
 
 """
-function get_dL(z, clight, get_H_z, H0, Omega0_m, Omega0_Lambda)
+function get_dL(z, clight= uc.clight_kms, H0 = uc.H0, Omega0_m = uc.Omega0_m, Omega0_Lambda = uc.Omega0_Lambda)
     dL = zeros(length(z))
     jj = 1
     for ii in z
@@ -526,9 +526,9 @@ function GenerateCatalog(nEvents::Int, population::String; time_delay_in_Myr = 1
     # Physics constant
 
     clight = uc.clight_kms  #km/s
-    Omega0_m = 0.3153
+    Omega0_m = uc.Omega0_m
     Omega0_Lambda = 1 - Omega0_m
-    H0 = 67.66 # km/s 1/Mpc
+    H0 = uc.H0 # km/s 1/Mpc
     H0_yr = 2.25e-18 * 3.154e7 # 1/yr
 
 
@@ -796,7 +796,7 @@ function GenerateCatalog(nEvents::Int, population::String; time_delay_in_Myr = 1
     chirp_mass = (m_1 .* m_2) .^ (3 / 5) ./ (m_1 .+ m_2) .^ (1 / 5)
     chirp_mass_detector_frame = chirp_mass .* (1 .+ z)
     eta = (m_1 .* m_2) ./ (m_1 .+ m_2) .^ 2
-    dL = get_dL(z, clight, get_H_z, H0, Omega0_m, Omega0_Lambda) ./ 1e3 # Gpc
+    dL = get_dL(z, clight, H0, Omega0_m, Omega0_Lambda) ./ 1e3 # Gpc
     date = Dates.now()
     date_format = string(Dates.format(date, "e dd u yyyy HH:MM:SS"))
 
