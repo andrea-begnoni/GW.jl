@@ -25,7 +25,7 @@ end
 Luminosity distance as a function of redshift, results in Mpc. clight in km/s
 
 """
-function get_dL(z, clight, get_H_z, H0, Omega0_m, Omega0_Lambda)
+function get_dL(z, clight= uc.clight_kms, H0 = uc.H0, Omega0_m = uc.Omega0_m, Omega0_Lambda = uc.Omega0_Lambda)
     dL = zeros(length(z))
     jj = 1
     for ii in z
@@ -435,7 +435,7 @@ The code also saves the redshift in the catalog, in case you want to use it for 
 
 
 """
-function GenerateCatalog(nEvents, population; time_delay_in_Myr = 10., seed_par = nothing, SFR = "Madau&Dickinson", name_catalog = nothing, local_rate = nothing)
+function GenerateCatalog(nEvents::Int, population::String; time_delay_in_Myr = 10., seed_par = nothing, SFR = "Madau&Dickinson", name_catalog = nothing, local_rate = nothing)
 
     if seed_par === nothing
         seed = rand(1:10000)
@@ -526,9 +526,9 @@ function GenerateCatalog(nEvents, population; time_delay_in_Myr = 10., seed_par 
     # Physics constant
 
     clight = uc.clight_kms  #km/s
-    Omega0_m = 0.3153
+    Omega0_m = uc.Omega0_m
     Omega0_Lambda = 1 - Omega0_m
-    H0 = 67.66 # km/s 1/Mpc
+    H0 = uc.H0 # km/s 1/Mpc
     H0_yr = 2.25e-18 * 3.154e7 # 1/yr
 
 
@@ -796,7 +796,7 @@ function GenerateCatalog(nEvents, population; time_delay_in_Myr = 10., seed_par 
     chirp_mass = (m_1 .* m_2) .^ (3 / 5) ./ (m_1 .+ m_2) .^ (1 / 5)
     chirp_mass_detector_frame = chirp_mass .* (1 .+ z)
     eta = (m_1 .* m_2) ./ (m_1 .+ m_2) .^ 2
-    dL = get_dL(z, clight, get_H_z, H0, Omega0_m, Omega0_Lambda) ./ 1e3 # Gpc
+    dL = get_dL(z, clight, H0, Omega0_m, Omega0_Lambda) ./ 1e3 # Gpc
     date = Dates.now()
     date_format = string(Dates.format(date, "e dd u yyyy HH:MM:SS"))
 
@@ -807,7 +807,7 @@ function GenerateCatalog(nEvents, population; time_delay_in_Myr = 10., seed_par 
         attributes(file)["population"] = population
         attributes(file)["time_delay_in_Myrs"] = time_delay_in_Myr
         attributes(file)["SFR"] = SFR
-        attributes(file)["total_number_sources_yr"] = total_number_sources_yr
+        attributes(file)["total_number_sources_yr"] = Int(round(total_number_sources_yr, digits=0))
         attributes(file)["local_rate"] = local_rate
         attributes(file)["date"] = date_format
 

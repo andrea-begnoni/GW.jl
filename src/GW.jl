@@ -20,7 +20,8 @@ module GW
 # using LaTeXStrings
 
 include("utils.jl")
-include("waveform.jl")
+#include("waveform.jl")
+include("waveforms/waveforms_master.jl")
 include("detector.jl")
 include("catalog.jl")
 
@@ -44,7 +45,7 @@ export DetectorStructure, DetectorCoordinates, Detector, _readASD, _readPSD, get
 export GenerateCatalog, ReadCatalog, get_dL
 
 # export from utils.jl
-export GMsun_over_c3, GMsun_over_c2, uGpc, GMsun_over_c2_Gpc, REarth_km, clight_kms, clightGpc, Lamt_delLam_from_Lam12, _ra_dec_from_theta_phi_rad, _theta_phi_from_ra_dec_rad, CovMatrix, Errors, SkyArea
+export GMsun_over_c3, GMsun_over_c2, uGpc, GMsun_over_c2_Gpc, REarth_km, clight_kms, clightGpc, Lamt_delLam_from_Lam12, _ra_dec_from_theta_phi_rad, _theta_phi_from_ra_dec_rad, CovMatrix, Errors, SkyArea, _orientationBigCircle
 
 
 

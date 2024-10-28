@@ -162,6 +162,7 @@ KAGRA = detector.Detector(36.412 * pi/180, 137.306 * pi/180, 15.396* pi/180, 90.
 
 # with this function you can check all the detectors available, it also prints the length of the arms for future interferomenters
 function _available_detectors()
+    println("The detectors available are: ")
     return ["CE1Id, 40km", "CE2NM, 20km", "CE2NSW, 20km", "ETS, 10km", "ETLS, 10km", "ETMR, 10km", "ETLMR, 10km", "LIGO_L", "LIGO_H", "VIRGO", "KAGRA"]
 end
 
@@ -725,7 +726,7 @@ end
 """
 ToDo: Need documentatiation
 """
-function Strain(model::PhenomHM,
+function Strain(model::Union{PhenomHM,PhenomXHM},
     DetectorCoordinates::DetectorStructure,
     f::AbstractArray,
     mc,
@@ -1094,7 +1095,7 @@ function SNR(model::Model,
     nEvents = length(mc)
     SNRs = Vector{Float64}(undef, nEvents)
 
-    if typeof(model) == PhenomD || typeof(model) == PhenomHM || typeof(model) == TaylorF2 || typeof(model) == PhenomXAS
+    if typeof(model) == PhenomD || typeof(model) == PhenomHM || typeof(model) == TaylorF2 || typeof(model) == PhenomXAS || typeof(model) == PhenomXHM
         Lambda1 = zeros(nEvents)
         Lambda2 = zeros(nEvents)
 

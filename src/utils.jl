@@ -5,7 +5,8 @@ using LinearAlgebra
 using LaTeXStrings
 
 
-export GMsun_over_c3, GMsun_over_c2, uGpc, GMsun_over_c2_Gpc, REarth_km, clight_kms, clightGpc, Lamt_delLam_from_Lam12, _ra_dec_from_theta_phi_rad, _theta_phi_from_ra_dec_rad, CovMatrix, Errors, SkyArea
+export GMsun_over_c3, GMsun_over_c2, uGpc, GMsun_over_c2_Gpc, REarth_km, clight_kms, clightGpc, Lamt_delLam_from_Lam12,
+         _ra_dec_from_theta_phi_rad, _theta_phi_from_ra_dec_rad, CovMatrix, Errors, SkyArea, _orientationBigCircle
 
 
 ##############################################################################
@@ -28,6 +29,12 @@ MSUN = 1.988409902147041637325262574352366540e30  # kg
 
 """Geometrized nominal solar mass, m"""
 MRSUN = GMsun_over_c2
+
+Omega0_m = 0.3153
+
+Omega0_Lambda = 1 - Omega0_m
+
+H0 = 67.66 # km/s 1/Mpc
 
 
 ##############################################################################
@@ -237,5 +244,53 @@ function SkyArea(covMatrix::Array{Float64,3}, thetaCatalog::Array; percent_level
 
     return skyArea
 end
+
+""" 
+Calculate the optimal angle for the orientation of the detector to maximize the signal from CBC gravitational wave. 
+The function can be used in the definition of 2 detectors network.
+It outputs the orientation of the second detectors such that it is at 45 degrees 
+These reasoning works if the first detector is oriented towards the East.
+If you want to use it for a different orientation, you need to add the angle of the first detector to the output of this function.
+
+#### Input arguments:
+- DetectorStructure det1: DetectorStructure object of the first detector.
+- DetectorStructure det2: DetectorStructure object of the second detector.
+
+#### Outputs:
+-  float orientation_CBC Optimal angle for the optimal orientation of the second detector in radians
+
+#### Example:
+```julia
+    orientation_CBC = _orientationBigCircle(0.1, 0.2, 0.3, 0.4)
+ ```
+""" 
+function _orientationBigCircle(det1, det2)
+
+    lat1 = det1.latitude_rad
+    long1 = det1.longitude_rad
+    orientation1 = det1.orientation_rad
+    lat2 = det2.latitude_rad
+    long2 = det2.longitude_rad
+
+
+    equatorialRadiusEarth = 6378.137 #from https://nssdc.gsfc.nasa.gov/planetary/factsheet/earthfact.html 
+    polarRadiusEarth = 6356.752 
+
+    eFactor = 1 - (equatorialRadiusEarth^2 - polarRadiusEarth^2) / equatorialRadiusEarth^2  # 1-e^2
+    eS = (equatorialRadiusEarth^2 - polarRadiusEarth^2) / equatorialRadiusEarth^2 # e^2
+
+    Lambda1 = eFactor * tan(lat2)/tan(lat1) + eS*sqrt( (1 + eFactor * tan(lat2)^2) / (1 + eFactor * tan(lat1)^2))
+    Lambda2 = eFactor * tan(lat1)/tan(lat2) + eS*sqrt( (1 + eFactor * tan(lat1)^2) / (1 + eFactor * tan(lat2)^2))
+
+
+    # alpha1 = atan( sin(long2 - long1) , ((Lambda1 - cos(long2 - long1))*sin(lat1)))
+    # alpha2 = atan( sin(long1 - long2) , ((Lambda2 - cos(long1 - long2))*sin(lat2)))
+    alpha1 = atan( sin(long2 - long1) , ((Lambda1 - cos(long2 - long1))*sin(lat1)))
+    alpha2 = atan( sin(long1 - long2) , ((Lambda2 - cos(long1 - long2))*sin(lat2)))
+
+    return mod(orientation1 + alpha1 - alpha2 + pi/4, pi)
+
+end
+
 
 end
