@@ -6,6 +6,93 @@
 
 # All is taken from LALSimulation and arXiv:1508.07250, arXiv:1508.07253, arXiv:1905.06011
 
+"""
+Needs documentation 
+"""
+function PolAbs(
+    model::PhenomD_NRTidal,
+    f::AbstractVector,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    iota,
+    Lambda1,
+    Lambda2;
+    fcutPar = 0.2,
+    fInsJoin_Ampl = 0.014,
+    fInsJoin_PHI = 0.018,
+    GMsun_over_c3 = uc.GMsun_over_c3,
+    GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc 
+)
+
+    amp = Ampl(
+        model,
+        f,
+        mc,
+        eta,
+        chi1,
+        chi2,
+        dL,
+        Lambda1,
+        Lambda2,
+        fcutPar = fcutPar,
+        fInsJoin_Ampl = fInsJoin_Ampl,
+        GMsun_over_c3 = GMsun_over_c3,
+        GMsun_over_c2_Gpc = GMsun_over_c2_Gpc
+    )
+
+    # take into account inclination 
+    hp = @. 0.5 * (1.0 + (cos(iota))^2) .* amp
+    hc = @. cos(iota) .* amp
+
+    return [hp, hc]
+    
+end
+
+"""
+ToDo: Need documentation
+"""
+function Pol(
+    model::PhenomD_NRTidal,
+    f::AbstractVector,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    iota,
+    Lambda1,
+    Lambda2;
+    fcutPar = 0.2,
+    fInsJoin_Ampl = 0.014,
+    fInsJoin_PHI = 0.018,
+    GMsun_over_c3 = uc.GMsun_over_c3,
+    GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc 
+)
+
+    hp, hc = PolAbs(
+        model,
+        f,
+        mc,
+        eta,
+        chi1,
+        chi2,
+        dL,
+        iota,
+        Lambda1,
+        Lambda2;
+        fcutPar = fcutPar,
+        fInsJoin_Ampl = fInsJoin_Ampl,
+        fInsJoin_PHI = fInsJoin_PHI,
+        GMsun_over_c3 = GMsun_over_c3,
+        GMsun_over_c2_Gpc = GMsun_over_c2_Gpc 
+    )
+
+    return [hp, 1im .* hc]
+
+end
 
 
 """

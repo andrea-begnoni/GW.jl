@@ -2,6 +2,90 @@
 # IMRPhenomXAS WAVEFORM
 #######################################################
 
+"""
+ToDo: Need documentation
+"""
+function PolAbs(model::PhenomXAS,
+    f::AbstractVector,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    iota,
+    Lambda1=0.0,
+    Lambda2=0.0;
+    fcutPar = 0.3,
+    IntAmpVersion=104,
+    GMsun_over_c3 = uc.GMsun_over_c3,
+    GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc
+)
+
+    #calculate amplitude of waveform
+    amp = Ampl(
+        model,
+        f,
+        mc,
+        eta,
+        chi1,
+        chi2,
+        dL,
+        fcutPar = fcutPar,
+        IntAmpVersion=IntAmpVersion,
+        GMsun_over_c3 = GMsun_over_c3,
+        GMsun_over_c2_Gpc = GMsun_over_c2_Gpc
+    )
+
+    # take into account inclination 
+    hp = @. 0.5 * (1.0 + (cos(iota))^2) .* amp
+    hc = @. cos(iota) .* amp
+
+    # return plus and cross polarization absolute values
+    return [hp, hc]
+    
+end
+
+"""
+ToDo: Need documentation
+"""
+function Pol(model::PhenomXAS,
+    f::AbstractVector,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    iota,
+    Lambda1=0.0,
+    Lambda2=0.0;
+    fcutPar = 0.3,
+    IntAmpVersion=104,
+    GMsun_over_c3 = uc.GMsun_over_c3,
+    GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc
+)
+
+    hp, hc = PolAbs(
+        model,
+        f,
+        mc,
+        eta,
+        chi1,
+        chi2,
+        dL,
+        iota,
+        Lambda1,
+        Lambda2,
+        fcutPar = fcutPar,
+        IntAmpVersion=IntAmpVersion,
+        GMsun_over_c3 = GMsun_over_c3,
+        GMsun_over_c2_Gpc = GMsun_over_c2_Gpc
+    )
+
+    # Return polarization with correct relative phase.
+    # Global phase excluded and provided by Phi().
+    return [hp, 1im .* hc]
+
+end
 
 """
 Compute the phase of the GW as a function of frequency, given the events parameters.

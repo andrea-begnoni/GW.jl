@@ -18,7 +18,94 @@ function _readQNMgrid_fdamp(pathWF::String)
     return readdlm(pathWF * "QNMData_fdamp.txt")[:, 1]   # [:,1] is to make it a 1D array instead of a 2D array
 end
 
+"""
+ToDo: Need documentation
+"""
+function PolAbs(model::PhenomD,
+    f::AbstractVector,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    iota,
+    Lambda1=0.0,
+    Lambda2=0.0;
+    fcutPar = 0.2,
+    fInsJoin_Ampl = 0.014,
+    GMsun_over_c3 = uc.GMsun_over_c3,
+    GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc,
+    container = nothing
+)
 
+    #calculate amplitude of waveform
+    amp = Ampl(
+        model,
+        f,
+        mc,
+        eta,
+        chi1,
+        chi2,
+        dL,
+        fcutPar = fcutPar,
+        fInsJoin_Ampl = fInsJoin_Ampl,
+        GMsun_over_c3 = GMsun_over_c3,
+        GMsun_over_c2_Gpc = GMsun_over_c2_Gpc,
+        container = container
+    )
+
+    # take into account inclination 
+    hp = @. 0.5 * (1.0 + (cos(iota))^2) .* amp
+    hc = @. cos(iota) .* amp
+
+    # return plus and cross polarization absolute values
+    return [hp, hc]
+    
+end
+
+"""
+ToDo: Need documentation
+"""
+function Pol(model::PhenomD,
+    f::AbstractVector,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    iota,
+    Lambda1=0.0,
+    Lambda2=0.0;
+    fcutPar = 0.2,
+    fInsJoin_Ampl = 0.014,
+    GMsun_over_c3 = uc.GMsun_over_c3,
+    GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc,
+    container = nothing
+)
+
+    hp, hc = PolAbs(
+        model,
+        f,
+        mc,
+        eta,
+        chi1,
+        chi2,
+        dL,
+        iota,
+        Lambda1,
+        Lambda2,
+        fcutPar = fcutPar,
+        fInsJoin_Ampl = fInsJoin_Ampl,
+        GMsun_over_c3 = GMsun_over_c3,
+        GMsun_over_c2_Gpc = GMsun_over_c2_Gpc,
+        container = container 
+    )
+
+    # Return polarization with correct relative phase.
+    # Global phase excluded and provided by Phi().
+    return [hp, 1im .* hc]
+
+end
 
 ## # Dimensionless frequency (Mf) at which the inspiral amplitude switches to the intermediate amplitude
 # fInsJoin_Ampl = 0.014

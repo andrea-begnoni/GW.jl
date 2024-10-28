@@ -16,10 +16,12 @@ using LinearAlgebra
 
 
 export TaylorF2, PhenomD, PhenomD_NRTidal, PhenomHM, PhenomNSBH, PhenomXAS, PhenomXHM, Model
+export Ampl, Phi, PolAbs, Pol, _npar, _event_type, _available_waveforms, _fcut, _finalspin, _radiatednrg, _tau_star, _list_polarizations, hphc
 
-export Ampl, Phi, _npar, _event_type, _available_waveforms, _fcut, _finalspin, _radiatednrg, _tau_star, hphc
 # Define an abstract type for the models
 abstract type Model end
+abstract type GrModel <: Model end    # Model for GrWaveforms
+abstract type BgrModel <: Model end   # Model for Wavefrom including beyond GR polarizations
 
 
 # Define a function to give an error message if the model is not implemented
@@ -58,6 +60,36 @@ function Phi(
     error("Phi not implemented for model: $(typeof(model)), or there is an error with the number of input parameters")
 end
 
+# Define a function to give an error message if the model is not implemented
+function Pol(
+    model::Model,
+    f,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    itoa,
+)
+    # Implementation specific to each model
+    error("Pol not implemented for model: $(typeof(model)), or there is an error with the number of input parameters")
+end
+
+# Define a function to give an error message if the model is not implemented
+function PolAbs(
+    model::Model,
+    f,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    iota,
+)
+    # Implementation specific to each model
+    error("PolAbs not implemented for model: $(typeof(model)), or there is an error with the number of input parameters")
+end
+
 function _npar(model::Model)
     # Implementation specific to each model
     error("_npar not implemented for model: $(typeof(model)), or there is an error with the number of input parameters")
@@ -68,20 +100,38 @@ function _event_type(model::Model)
    error("_event_type not implemented for model: $(typeof(model)), or there is an error with the number of input parameters")
 end
 
+# Define a function to give an error message if the model is not implemented
+function _list_polarizations(model::Model) 
+    # Implementation specific to each model
+    error("_list_polarizations not implemented for model: $(typeof(model)), or there is an error with the number of input parameters")
+ end
+
+# All standard GR polarizations have the same polarizations
+"""
+Returns a list of the names of the polarizations of this waveform.
+
+    _list_polarizations(model)
+
+    The order of polarizations handed in this list is the same as the signals returned by Pol(model, ...). 
+"""
+function _list_polarizations(model::GrModel) 
+    return ["plus", "cross"]
+ end
+
 # Define concrete types for each model
-struct PhenomD <: Model end
+struct PhenomD <: GrModel end
 
-struct PhenomHM <: Model end
+struct PhenomHM <: GrModel end
 
-struct TaylorF2 <: Model end
+struct TaylorF2 <: GrModel end
 
-struct PhenomD_NRTidal <: Model end
+struct PhenomD_NRTidal <: GrModel end
 
-struct PhenomNSBH <: Model end
+struct PhenomNSBH <: GrModel end
 
-struct PhenomXAS <: Model end
+struct PhenomXAS <: GrModel end
 
-struct PhenomXHM <: Model end
+struct PhenomXHM <: GrModel end
 
 function _available_waveforms()
     return ["TaylorF2", "PhenomD", "PhenomHM", "PhenomD_NRTidal", "PhenomNSBH", "PhenomXAS", "PhenomXHM"]
@@ -273,6 +323,7 @@ struct Ampl22Struct
     gamma2::Union{Float64,ForwardDiff.Dual}
     gamma3::Union{Float64,ForwardDiff.Dual}
 end
+
 ##############################################################################
 #   HELPER FUNCTIONS, NEEDED FOR ALL WAVEFORMS
 ##############################################################################
@@ -325,7 +376,8 @@ function _event_type(model::PhenomD)
     return "BBH"
 end
 
-""" helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
+""" 
+helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
 """
 function Phi(model::PhenomD,
     f,
@@ -343,7 +395,8 @@ function Phi(model::PhenomD,
     return Phi(model, f, mc, eta, chi1, chi2, fInsJoin_PHI=fInsJoin_PHI, fcutPar=fcutPar, GMsun_over_c3=GMsun_over_c3, container=container)
 end
 
-""" helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
+""" 
+helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
 """
 function Ampl(model::PhenomD,
     f,
@@ -403,7 +456,8 @@ function _event_type(model::PhenomNSBH)
     return "NSBH"
 end
 
-""" helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
+""" 
+helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
 """
 function Phi(model::PhenomNSBH,
     f,
@@ -421,7 +475,8 @@ function Phi(model::PhenomNSBH,
     return Phi(model, f, mc, eta, chi1, chi2, Lambda; fInsJoin = fInsJoin, fcutPar = fcutPar, GMsun_over_c3 = GMsun_over_c3)
 end
 
-""" helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
+""" 
+helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
 """
 function Ampl(model::PhenomNSBH,
     f,
@@ -489,7 +544,8 @@ function _event_type(model::PhenomXAS)
     return "BBH"
 end
 
-""" helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
+"""
+helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
 """
 function Phi(model::PhenomXAS,
     f,
@@ -508,7 +564,8 @@ function Phi(model::PhenomXAS,
 end
 
 
-""" helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
+"""
+helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
 """
 function Ampl(model::PhenomXAS,
     f,
@@ -650,7 +707,6 @@ function _radiatednrg(model::Model, eta, chi1, chi2)
     )
 end
 
-
 """
 Compute the time to coalescence (in seconds) as a function of frequency in `Hz`. Used when including the Earth motion effect.
 
@@ -706,6 +762,7 @@ end
 function _fcut(model::Model, mc, eta, Lambda1, Lambda2; fcutPar = 0.2, GMsun_over_c3 = uc.GMsun_over_c3)
     return _fcut(model, mc, eta, fcutPar = fcutPar, GMsun_over_c3 = GMsun_over_c3)
 end
+
 """
 Compute the cut frequency of the waveform as a function of the events parameters, in `Hz`.
 Valid for TaylorF2, PhenomD, PhenomHM. Not for PhenomD_NRTidal.
@@ -735,7 +792,6 @@ function _fcut(model::Model, mc, eta; fcutPar = 0.2, GMsun_over_c3 = uc.GMsun_ov
     return fcutPar / (mc * GMsun_over_c3 / (eta^(0.6)))
 
 end
-
 
 """
 useful functions for hphc()

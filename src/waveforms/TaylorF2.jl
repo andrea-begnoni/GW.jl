@@ -4,7 +4,79 @@
 # TAYLORF2 WAVEFORM
 ####################################################
 
+"""
+ToDo: Need documentation
+"""
+function PolAbs(model::TaylorF2,
+    f::AbstractVector,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    iota,
+    Lambda1=0.0,
+    Lambda2=0.0;
+    clightGpc = uc.clightGpc, 
+    GMsun_over_c3 = uc.GMsun_over_c3
+)
 
+    #calculate amplitude of waveform
+    amp = Ampl(
+        model,
+        f,
+        mc,
+        dL,
+        clightGpc = clightGpc, 
+        GMsun_over_c3 = GMsun_over_c3
+    )
+
+    # take into account inclination 
+    hp = @. 0.5 * (1.0 + (cos(iota))^2) .* amp
+    hc = @. cos(iota) .* amp
+
+    # return plus and cross polarization absolute values
+    return [hp, hc]
+    
+end
+
+"""
+ToDo: Need documentation
+"""
+function Pol(model::TaylorF2,
+    f::AbstractVector,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    iota,
+    Lambda1=0.0,
+    Lambda2=0.0;
+    clightGpc = uc.clightGpc, 
+    GMsun_over_c3 = uc.GMsun_over_c3
+)
+
+    hp, hc = PolAbs(
+        model,
+        f,
+        mc,
+        eta,
+        chi1,
+        chi2,
+        dL,
+        iota,
+        Lambda1,
+        Lambda2,
+        clightGpc = clightGpc, 
+        GMsun_over_c3 = GMsun_over_c3
+    )
+
+    # Return polarization with correct relative phase.
+    # Global phase excluded and provided by Phi().
+    return [hp, 1im .* hc]
+
+end
 
 """
 Compute the phase of the GW as a function of frequency, given the events parameters.
