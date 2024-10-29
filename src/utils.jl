@@ -191,7 +191,7 @@ function CovMatrix(Fisher::Matrix{Float64}; debug = true, threshold = 5e-2, call
             covMatrix_ = inv(cholesky(Fisher_))
             covMatrix_ = covMatrix_ ./ sqrt.(diagonal * diagonal')
             inversion_error_ = maximum(abs.(Fisher * covMatrix_ - I))
-            
+
             if debug == true
                 println("Inversion error: ", inversion_error_)
                 println("Inversion error before normalization: ", inversion_error)
@@ -269,7 +269,7 @@ end
 """
 Same as CovMatrix(Fisher::Matrix{Float64}) but for a 3D array of Fisher matrices.
 """
-function CovMatrix(Fisher::Array{Float64, 3}; threshold = 5e-2, force_high_precision = false)
+function CovMatrix(Fisher::Array{Float64, 3}; threshold = 5e-2, force_high_precision = false, debug = false)
     covMatrix = zeros(size(Fisher))  # Initialize covMatrix as a zero matrix of the same size as Fisher
 
     n = size(Fisher)[1]
@@ -277,7 +277,7 @@ function CovMatrix(Fisher::Array{Float64, 3}; threshold = 5e-2, force_high_preci
 
     for i in 1:n
         idx=0
-        covMatrix[i,:,:], idx= CovMatrix(Fisher[i,:,:], debug = true, threshold = threshold, called_by_3D_function = true, force_high_precision = force_high_precision)
+        covMatrix[i,:,:], idx= CovMatrix(Fisher[i,:,:], debug = debug, threshold = threshold, called_by_3D_function = true, force_high_precision = force_high_precision)
         failed_inv += Int(idx/3)
     end
     println("Failed inversions: ", failed_inv)
