@@ -198,7 +198,7 @@ This can be approximated as 2 f_ISCO for inspiral only waveforms:
 -  Cut frequency (float) of the waveform for the chosen event, in Hz.
 
 """
-function _fcut(model::TaylorF2, mc, eta, chi1, chi2; GMsun_over_c3 = uc.GMsun_over_c3)
+function _fcut(model::TaylorF2, mc, eta, chi1, chi2, Lambda1, Lambda2; GMsun_over_c3 = uc.GMsun_over_c3)
 
     println("Using fcut of Kerr orbit since the two angular momenta 'chi1' and 'chi2' were given")
     eta2 = eta*eta

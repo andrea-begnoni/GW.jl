@@ -126,38 +126,161 @@ If the Fisher matrix is made of zeros, it returns a zero matrix.
 ```
 
 """
-function CovMatrix(Fisher::Matrix{Float64}, print_error = true)
+function CovMatrix(Fisher::Matrix{Float64}; debug = true, threshold = 5e-2, called_by_3D_function = false, force_high_precision = false)
     covMatrix = zeros(size(Fisher))  # Initialize covMatrix as a zero matrix of the same size as Fisher
+    
+    idx = 0 # index to check if the inversion is correctly done
+    # idx = 0 if the inversion is correctly done
+    # idx = 1 if the Fisher matrix is not positive definite (try to normalize it)
+    # idx = 2 if the Fisher matrix is not positive definite even after normalization
+    # idx = 3 if the inversion failed with 128 bit precision
 
+    # we are interested in the case idx = 3, return zero matrix and idx/3 is the Fisher matrix is not positive definite even
+    # after normalization
     if Fisher[1,1]==0.
-        return covMatrix
+        if called_by_3D_function
+            return zeros(size(Fisher)), idx
+        else
+            return zeros(size(Fisher))
+        end
     end
-    # normalize the fisher, technique by GWFISH 
-    diagonal = diag(Fisher)
-    Fisher = Fisher ./ sqrt.(diagonal * diagonal')
+
+    if force_high_precision
+        covMatrix=setprecision(128) do # idea to go 128 bit precision from GWFAST
+
+            try 
+                Fisher_BF = BigFloat.(Fisher) # convert Fisher matrix to BigFloat (BF)
+                covMatrix = inv(cholesky(Fisher_BF)) 
+                return covMatrix
+            catch
+                idx = 3
+                if debug == true
+                    println("Inversion failed with 128 bit precision")
+                end
+                return covMatrix
+            end
+
+
+        end
+
+        if called_by_3D_function
+            return covMatrix, idx
+        else
+            return covMatrix
+        end
+    end
+
+    # try to invert the Fisher matrix, first with Float64 precision
     try
         covMatrix = inv(cholesky(Fisher))
     catch
-        if print_error == true
-            println("Fisher matrix is not positive definite. Returning zero matrix.")
+        idx = 1
+        covMatrix = zeros(size(Fisher))
+        if debug == true
+            println("Fisher matrix is not positive definite. Try normalize it.")
         end
     end
-    covMatrix = covMatrix ./ sqrt.(diagonal * diagonal')
 
-    return covMatrix
+    inversion_error = maximum(abs.(Fisher * covMatrix - I))
+
+    if idx == 1 || inversion_error > threshold*1e-2
+        # normalize the fisher, technique by GWFISH 
+        diagonal = diag(Fisher)
+        Fisher_ = deepcopy(Fisher) ./ sqrt.(diagonal * diagonal')
+        try
+            covMatrix_ = inv(cholesky(Fisher_))
+            covMatrix_ = covMatrix_ ./ sqrt.(diagonal * diagonal')
+            inversion_error_ = maximum(abs.(Fisher * covMatrix_ - I))
+            
+            if debug == true
+                println("Inversion error: ", inversion_error_)
+                println("Inversion error before normalization: ", inversion_error)
+            end
+
+            if inversion_error_ < inversion_error
+                
+                covMatrix = covMatrix_
+                inversion_error = inversion_error_            
+            end
+
+        catch
+            idx = 2
+            covMatrix = zeros(size(Fisher))
+            if debug == true
+                println("Fisher matrix is not positive definite. Try 128 bit computation.")
+            end
+        end
+
+    end
+
+    if idx == 2 || inversion_error > threshold*1e-2
+        # try to invert the Fisher matrix with 128 bit precision
+        covMatrix = setprecision(128) do # idea to go 128 bit precision from GWFAST
+
+            try 
+                Fisher_BF = BigFloat.(Fisher) # convert Fisher matrix to BigFloat (BF)
+                covMatrix = inv(cholesky(Fisher_BF))
+                return covMatrix 
+            catch
+                idx = 3
+                # covMatrix = zeros(size(Fisher))
+                if debug == true
+                    println("Inversion failed with 128 bit precision")
+                end
+                return covMatrix
+            end
+
+
+        end
+
+    end
+
+    # check if the inversion is correctly done
+    if idx > 0
+        inversion = isapprox(Fisher * covMatrix, I, atol=threshold) 
+
+        if inversion == false # failed inversion, return zero matrix
+            idx = 3
+
+            if debug == true
+                println("Inversion failed")
+                inversion_error = maximum(abs.(Fisher * covMatrix - I))
+                println("Inversion error: ", inversion_error)
+            end
+
+            if called_by_3D_function
+                return zeros(size(Fisher)), idx
+            else
+                return zeros(size(Fisher))
+            end
+
+        end
+
+    end
+
+    if called_by_3D_function
+        return covMatrix, idx
+    else
+        return covMatrix
+    end
+
 end
 
 """
 Same as CovMatrix(Fisher::Matrix{Float64}) but for a 3D array of Fisher matrices.
 """
-function CovMatrix(Fisher::Array{Float64, 3}, print_error = false)
+function CovMatrix(Fisher::Array{Float64, 3}; threshold = 5e-2, force_high_precision = false)
     covMatrix = zeros(size(Fisher))  # Initialize covMatrix as a zero matrix of the same size as Fisher
 
     n = size(Fisher)[1]
+    failed_inv = 0
+
     for i in 1:n
-        covMatrix[i,:,:] = CovMatrix(Fisher[i,:,:], print_error)
+        idx=0
+        covMatrix[i,:,:], idx= CovMatrix(Fisher[i,:,:], debug = true, threshold = threshold, called_by_3D_function = true, force_high_precision = force_high_precision)
+        failed_inv += Int(idx/3)
     end
-    
+    println("Failed inversions: ", failed_inv)
     return covMatrix
 end
 """
