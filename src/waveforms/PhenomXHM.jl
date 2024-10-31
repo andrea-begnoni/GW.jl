@@ -1,5 +1,49 @@
 #! format: off
 
+"""
+ToDo: Need documentation
+"""
+function PolAbs(model::PhenomXHM,
+    f::AbstractVector,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    iota,
+    Lambda1=0.0,
+    Lambda2=0.0
+)
+    hp, hc = waveform.hphc(model, f, mc, eta, chi1, chi2, dL, iota)
+
+    return [abs.(hp), abs.(hc)]
+    
+end
+
+"""
+ToDo: Need documentation
+"""
+function Pol(model::PhenomXHM,
+    f::AbstractVector,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    iota,
+    Lambda1=0.0,
+    Lambda2=0.0
+)
+    hp, hc = waveform.hphc(model, f, mc, eta, chi1, chi2, dL, iota)
+    
+    # Return polarization with correct relative phase.
+    # ATTENTION: For this waveform, the complete phase is already included 
+    # in hphc() function. 
+    return [hp, hc]
+
+end
+
+
 # *************************************************
 #                                                  
 #          Amplitude Cutting Frequencies           
