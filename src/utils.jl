@@ -112,10 +112,18 @@ function _theta_phi_from_ra_dec_rad(ra::AbstractArray, dec::AbstractArray)
 end
 
 """
-Function to compute the covariance matrix from the Fisher matrix. If the matrix is not positive definite, it returns a zero matrix. This can happen when the Fisher matrix is not invertible (e.g., when the signal-to-noise ratio is low).
+Function to compute the covariance matrix from the Fisher matrix. 
+The function uses the Cholesky decomposition to invert the Fisher matrix. Some matrices can be difficult to invert, so if the inversion fails, it tries to normalize the Fisher matrix and invert it again. 
+If the inversion fails again, it tries to invert the Fisher matrix with 128 bit precision. If also this fails, it returns a zero matrix.
 If the Fisher matrix is made of zeros, it returns a zero matrix.
 #### Input arguments:
 -  Fisher matrix: square matrix of size NxN.
+
+#### Optional arguments:
+-  debug: boolean to print debug information. Default is true.
+-  threshold: float with the threshold to check if the inversion is correctly done. Default is 5e-2.
+-  called_by_3D_function: boolean to check if the function is called by the CovMatrix() function that deals with arrays of covariances. It is used to keep track of the number of failed inversions. Default is false.
+-  force_high_precision: boolean to force the inversion with 128 bit precision. Default is false.
 
 #### Outputs:
 -  Covariance matrix: square matrix of size NxN.
@@ -267,7 +275,8 @@ function CovMatrix(Fisher::Matrix{Float64}; debug = true, threshold = 5e-2, call
 end
 
 """
-Same as CovMatrix(Fisher::Matrix{Float64}) but for a 3D array of Fisher matrices.
+Same as CovMatrix(Fisher::Matrix{Float64}) but for a 3D array of Fisher matrices. So array of size MxNxN. where M is the number of Fisher matrices.
+
 """
 function CovMatrix(Fisher::Array{Float64, 3}; threshold = 5e-2, force_high_precision = false, debug = false)
     covMatrix = zeros(size(Fisher))  # Initialize covMatrix as a zero matrix of the same size as Fisher
