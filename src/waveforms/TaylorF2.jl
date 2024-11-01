@@ -61,6 +61,11 @@ function Phi(model::TaylorF2,
     chi_sdotchi_a  = chi_s*chi_a
 
     vlso = 1. /sqrt(6.)
+    if Lambda1 > 0. || Lambda2 > 0.
+        is_tidal = true
+        use_QuadMonTid = true
+    end
+    
     
     if is_tidal && use_QuadMonTid
         # A non-zero tidal deformability induces a quadrupole moment (for BBH it is 1).
@@ -140,8 +145,7 @@ function Phi(model::TaylorF2,
     if is_tidal
         # Add tidal contribution if needed, as in PhysRevD.89.103012
         Lam_t, delLam    = uc.Lamt_delLam_from_Lam12(Lambda1, Lambda2, eta)
-        
-        phi_Tidal = (-0.5*39. *Lam_t)*(v^10.) + (-3115. /64. *Lam_t + 6595. /364. *Seta*delLam)*(v^12.)
+        phi_Tidal = @. (-0.5*39. *Lam_t)*(v^10.) + (-3115. /64. *Lam_t + 6595. /364. *Seta*delLam)*(v^12.)
         
     else
         phi_Tidal = 0.

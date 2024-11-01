@@ -286,8 +286,17 @@ end
 """
 Returns the number of parameter of a struct<:Model as integer number. 
 """
-function _npar(model::TaylorF2)
-    return 11
+function _npar(model::TaylorF2, Lambda1, Lambda2)
+    more_par = 0
+    if Lambda1 > 0.
+        more_par += 1
+    end
+
+    if Lambda2 > 0.
+        more_par += 1
+    end
+
+    return 11 + more_par
 end
 
 """

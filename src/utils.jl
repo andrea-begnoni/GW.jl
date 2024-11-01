@@ -6,7 +6,7 @@ using LaTeXStrings
 
 
 export GMsun_over_c3, GMsun_over_c2, uGpc, GMsun_over_c2_Gpc, REarth_km, clight_kms, clightGpc, Lamt_delLam_from_Lam12,
-         _ra_dec_from_theta_phi_rad, _theta_phi_from_ra_dec_rad, CovMatrix, Errors, SkyArea, _orientationBigCircle
+         _ra_dec_from_theta_phi_rad, _theta_phi_from_ra_dec_rad, CovMatrix, Errors, SkyArea, _orientationBigCircle, CovMatrix_Lamt_delLam
 
 
 ##############################################################################
@@ -67,6 +67,30 @@ function Lamt_delLam_from_Lam12(Lambda1, Lambda2, eta)
 
 end
 
+r"""
+Compute the covariance matrix of L"\tilde{Lambda}" and L"\delta\tilde{Lambda}" from the Fisher matrix of the tidal deformabilities.
+
+#### Input arguments:
+-  Fisher Fisher matrix.
+-  Lambda1 Tidal deformability of object 1
+-  Lambda2 Tidal deformability of object 2
+-  eta The symmetric mass ratio of the object.
+
+#### Outputs:
+-  Covariance matrix of L"\tilde{Lambda}" and L"\delta\tilde{Lambda}".
+
+"""
+function CovMatrix_Lamt_delLam(Fisher, Lambda1, Lambda2, eta)
+
+    Cov_reduced = CovMatrix(Fisher, debug=false)[[12, 13, 2], [12, 13, 2]]
+    # jacobian
+    J1 = ForwardDiff.gradient(x->Lamt_delLam_from_Lam12(x...)[1], [Lambda1, Lambda2, eta])
+    J2 = ForwardDiff.gradient(x->Lamt_delLam_from_Lam12(x...)[2], [Lambda1, Lambda2, eta])
+    J = [J1 J2]'
+    # covariance matrix of Lambda tilde and delta Lambda
+    Cov_Lamt_delLam = J * Cov_reduced * J'
+    return Cov_Lamt_delLam
+end
 
 
 
@@ -203,6 +227,7 @@ function CovMatrix(Fisher::Matrix{Float64}; debug = true, threshold = 5e-2, call
             if debug == true
                 println("Inversion error: ", inversion_error_)
                 println("Inversion error before normalization: ", inversion_error)
+                println(idx)
             end
 
             if inversion_error_ < inversion_error
@@ -215,7 +240,7 @@ function CovMatrix(Fisher::Matrix{Float64}; debug = true, threshold = 5e-2, call
             idx = 2
             covMatrix = zeros(size(Fisher))
             if debug == true
-                println("Fisher matrix is not positive definite. Try 128 bit computation.")
+                println("Fisher matrix is not positive definite even after normalization")
             end
         end
 
@@ -224,6 +249,9 @@ function CovMatrix(Fisher::Matrix{Float64}; debug = true, threshold = 5e-2, call
     if idx == 2 || inversion_error > threshold*1e-2
         # try to invert the Fisher matrix with 128 bit precision
         covMatrix = setprecision(128) do # idea to go 128 bit precision from GWFAST
+            if debug == true
+                println("Try to invert with 128 bit precision")
+            end
 
             try 
                 Fisher_BF = BigFloat.(Fisher) # convert Fisher matrix to BigFloat (BF)
@@ -244,27 +272,31 @@ function CovMatrix(Fisher::Matrix{Float64}; debug = true, threshold = 5e-2, call
     end
 
     # check if the inversion is correctly done
-    if idx > 0
-        inversion = isapprox(Fisher * covMatrix, I, atol=threshold) 
+    inversion = isapprox(Fisher * covMatrix, I, atol=threshold) 
+    if inversion == false # failed inversion, return zero matrix
+        idx = 3
 
-        if inversion == false # failed inversion, return zero matrix
-            idx = 3
-
-            if debug == true
-                println("Inversion failed")
-                inversion_error = maximum(abs.(Fisher * covMatrix - I))
-                println("Inversion error: ", inversion_error)
-            end
-
-            if called_by_3D_function
-                return zeros(size(Fisher)), idx
-            else
-                return zeros(size(Fisher))
-            end
-
+        if debug == true
+            println("Inversion failed")
+            inversion_error = maximum(abs.(Fisher * covMatrix - I))
+            println("Inversion error: ", inversion_error)
         end
 
+        if called_by_3D_function
+            return zeros(size(Fisher)), idx
+        else
+            return zeros(size(Fisher))
+        end
+    else
+        if debug == true
+            println("Inversion successful")
+        end
     end
+
+
+
+    # return covMatrix in 64 bit precision
+    covMatrix = Float64.(covMatrix)
 
     if called_by_3D_function
         return covMatrix, idx
