@@ -6,20 +6,6 @@
 
 
 
-function _readQNMgrid_a(pathWF::String)
-    return readdlm(pathWF * "QNMData_a.txt")[:, 1]   # [:,1] is to make it a 1D array instead of a 2D array
-end
-
-function _readQNMgrid_fring(pathWF::String)
-    return readdlm(pathWF * "QNMData_fring.txt")[:, 1]   # [:,1] is to make it a 1D array instead of a 2D array
-end
-
-function _readQNMgrid_fdamp(pathWF::String)
-    return readdlm(pathWF * "QNMData_fdamp.txt")[:, 1]   # [:,1] is to make it a 1D array instead of a 2D array
-end
-
-
-
 ## # Dimensionless frequency (Mf) at which the inspiral amplitude switches to the intermediate amplitude
 # fInsJoin_Ampl = 0.014
 # # Dimensionless frequency (Mf) at which the inspiral phase switches to the intermediate phase

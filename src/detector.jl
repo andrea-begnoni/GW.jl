@@ -1962,14 +1962,7 @@ function FisherMatrix(model::Model,
     name_folder = nothing,
     save_catalog = false,
 )
-    nEvents = length(mc)
-
-    if model == TaylorF2()
-        nPar = _npar(model, Lambda1[1], Lambda2[1])
-    else
-        nPar = _npar(model)
-    end
-    
+    nEvents = length(mc)    
 
     if name_folder === nothing
         name_folder = _event_type(model) 
@@ -1980,6 +1973,12 @@ function FisherMatrix(model::Model,
     end
     if Lambda2===nothing
         Lambda2 = zeros(size(mc))
+    end
+
+    if model == TaylorF2()
+        nPar = _npar(model, Lambda1[1], Lambda2[1])
+    else
+        nPar = _npar(model)
     end
 
     Fishers = Array{Float64}(undef, nEvents, nPar, nPar)

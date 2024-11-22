@@ -63,8 +63,8 @@ function Phi(model::PhenomNSBH,
     # Get the path to the directory of this file
     PACKAGE_DIR = @__DIR__
 
-    # Go one step back in the path (from ""GW.jl/src" to "GW.jl")
-    PARENT_DIR = dirname(PACKAGE_DIR)
+    # Go one step back in the path (from ""GW.jl/src/waveforms" to "GW.jl")
+    PARENT_DIR = dirname(dirname(PACKAGE_DIR))
     
     # Construct the path to the "useful_files" folder from the parent directory
     USEFUL_FILES_DIR = joinpath(PARENT_DIR, "useful_files/WFfiles/")

@@ -274,7 +274,24 @@ struct Ampl22Struct
     gamma3::Union{Float64,ForwardDiff.Dual}
 end
 ##############################################################################
-#   HELPER FUNCTIONS, NEEDED FOR ALL WAVEFORMS
+#   HELPER FUNCTIONS, NEEDED BY MORE THAN ONE WAVEFORM
+##############################################################################
+
+function _readQNMgrid_a(pathWF::String)
+    return readdlm(pathWF * "QNMData_a.txt")[:, 1]   # [:,1] is to make it a 1D array instead of a 2D array
+end
+
+function _readQNMgrid_fring(pathWF::String)
+    return readdlm(pathWF * "QNMData_fring.txt")[:, 1]   # [:,1] is to make it a 1D array instead of a 2D array
+end
+
+function _readQNMgrid_fdamp(pathWF::String)
+    return readdlm(pathWF * "QNMData_fdamp.txt")[:, 1]   # [:,1] is to make it a 1D array instead of a 2D array
+end
+
+
+##############################################################################
+#   HELPER FUNCTIONS, NEEDED ONLY BY ONE WAVEFORM
 ##############################################################################
 
 ##############################################################################
