@@ -133,6 +133,11 @@ function Phi(model::TaylorF2,
     chi_sdotchi_a  = chi_s*chi_a
 
     vlso = 1. /sqrt(6.)
+    if Lambda1 > 0. || Lambda2 > 0.
+        is_tidal = true
+        use_QuadMonTid = true
+    end
+    
     
     if is_tidal && use_QuadMonTid
         # A non-zero tidal deformability induces a quadrupole moment (for BBH it is 1).
@@ -157,10 +162,10 @@ function Phi(model::TaylorF2,
 
     if use_3p5PN_SpinHO
         # This part includes SS and SSS contributions at 3.5PN, which are not included in LAL
-            TF2coeffs_seven = 77096675. *pi/254016. + 378515. *pi*eta/1512. - 74045. *pi*eta2/756. + (-25150083775. /3048192. + 10566655595. *eta/762048. - 1042165. *eta2/3024. + 5345. *eta^3/36. + (14585. /8. - 7270. *eta + 80. *eta2)*chi_a2)*chi_s + (14585. /24. - 475. *eta/6. + 100. *eta2/3.)*chi_s2*chi_s + Seta*((-25150083775. /3048192. + 26804935. *eta/6048. - 1985. *eta2/48.)*chi_a + (14585. /24. - 2380. *eta)*chi_a2*chi_a + (14585. /8. - 215. *eta/2.)*chi_a*chi_s2)
-        else
-            TF2coeffs_seven = 77096675. *pi/254016. + 378515. *pi*eta/1512. - 74045. *pi*eta2/756. + (-25150083775. /3048192. + 10566655595. *eta/762048. - 1042165. *eta2/3024. + 5345. *eta^3/36.)*chi_s + Seta*((-25150083775. /3048192. + 26804935. *eta/6048. - 1985. *eta2/48.)*chi_a)
-        end
+        TF2coeffs_seven = 77096675. *pi/254016. + 378515. *pi*eta/1512. - 74045. *pi*eta2/756. + (-25150083775. /3048192. + 10566655595. *eta/762048. - 1042165. *eta2/3024. + 5345. *eta^3/36. + (14585. /8. - 7270. *eta + 80. *eta2)*chi_a2)*chi_s + (14585. /24. - 475. *eta/6. + 100. *eta2/3.)*chi_s2*chi_s + Seta*((-25150083775. /3048192. + 26804935. *eta/6048. - 1985. *eta2/48.)*chi_a + (14585. /24. - 2380. *eta)*chi_a2*chi_a + (14585. /8. - 215. *eta/2.)*chi_a*chi_s2)
+    else
+        TF2coeffs_seven = 77096675. *pi/254016. + 378515. *pi*eta/1512. - 74045. *pi*eta2/756. + (-25150083775. /3048192. + 10566655595. *eta/762048. - 1042165. *eta2/3024. + 5345. *eta^3/36.)*chi_s + Seta*((-25150083775. /3048192. + 26804935. *eta/6048. - 1985. *eta2/48.)*chi_a)
+    end
 
     TF2coeffs = TF2coeffsStructure(
         1.,
@@ -212,8 +217,7 @@ function Phi(model::TaylorF2,
     if is_tidal
         # Add tidal contribution if needed, as in PhysRevD.89.103012
         Lam_t, delLam    = uc.Lamt_delLam_from_Lam12(Lambda1, Lambda2, eta)
-        
-        phi_Tidal = (-0.5*39. *Lam_t)*(v^10.) + (-3115. /64. *Lam_t + 6595. /364. *Seta*delLam)*(v^12.)
+        phi_Tidal = @. (-0.5*39. *Lam_t)*(v^10.) + (-3115. /64. *Lam_t + 6595. /364. *Seta*delLam)*(v^12.)
         
     else
         phi_Tidal = 0.
@@ -270,7 +274,7 @@ This can be approximated as 2 f_ISCO for inspiral only waveforms:
 -  Cut frequency (float) of the waveform for the chosen event, in Hz.
 
 """
-function _fcut(model::TaylorF2, mc, eta, chi1, chi2; GMsun_over_c3 = uc.GMsun_over_c3)
+function _fcut(model::TaylorF2, mc, eta, chi1, chi2, Lambda1, Lambda2; GMsun_over_c3 = uc.GMsun_over_c3)
 
     println("Using fcut of Kerr orbit since the two angular momenta 'chi1' and 'chi2' were given")
     eta2 = eta*eta

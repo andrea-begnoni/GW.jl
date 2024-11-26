@@ -1095,7 +1095,7 @@ function SNR(model::Model,
     nEvents = length(mc)
     SNRs = Vector{Float64}(undef, nEvents)
 
-    if typeof(model) == PhenomD || typeof(model) == PhenomHM || typeof(model) == TaylorF2 || typeof(model) == PhenomXAS || typeof(model) == PhenomXHM
+    if typeof(model) == PhenomD || typeof(model) == PhenomHM || typeof(model) == PhenomXAS || typeof(model) == PhenomXHM
         Lambda1 = zeros(nEvents)
         Lambda2 = zeros(nEvents)
 
@@ -1104,6 +1104,15 @@ function SNR(model::Model,
         if name_folder == "BBH"
             name_folder = "NSBH"
         end
+
+    elseif typeof(model) == TaylorF2
+        if Lambda1 == 0.
+            Lambda1 = zeros(nEvents)
+        end
+        if Lambda2 == 0.
+            Lambda2 = zeros(nEvents)
+        end
+        
     else
         if name_folder == "BBH"
             name_folder = "BNS"
@@ -1343,7 +1352,11 @@ function FisherMatrix_internal(model::Model,
     return_SNR = false,
 )
 
-    nPar = _npar(model)
+    if model == TaylorF2()
+        nPar = _npar(model, Lambda1, Lambda2)
+    else
+        nPar = _npar(model)
+    end
 
     if isnothing(fmax)
         fcut = waveform._fcut(model, mc, eta, Lambda1, Lambda2)
@@ -1497,7 +1510,11 @@ function FisherMatrix(model::Model,
 
     # compute SNR and procede only if it is above the threshold
 
-    nPar = _npar(model)
+    if model == TaylorF2()
+        nPar = _npar(model, Lambda1, Lambda2)
+    else
+        nPar = _npar(model)
+    end
 
     if rho_thres !==nothing
         SNRval = SNR(
@@ -1628,7 +1645,11 @@ function FisherMatrix_Tdetector(model::Model,
 
     if rho_thres !==nothing
 
-        nPar = _npar(model)
+        if model == TaylorF2()
+            nPar = _npar(model, Lambda1, Lambda2)
+        else
+            nPar = _npar(model)
+        end
 
         SNRval = SNR(
             model,
@@ -1849,8 +1870,8 @@ function FisherMatrix(model::Model,
     name_folder = nothing,
     save_catalog = false,
 )
-    nEvents = length(mc)
-    nPar = _npar(model)
+    nEvents = length(mc)    
+
     if name_folder === nothing
         name_folder = _event_type(model) 
     end
@@ -1860,6 +1881,12 @@ function FisherMatrix(model::Model,
     end
     if Lambda2===nothing
         Lambda2 = zeros(size(mc))
+    end
+
+    if model == TaylorF2()
+        nPar = _npar(model, Lambda1[1], Lambda2[1])
+    else
+        nPar = _npar(model)
     end
 
     Fishers = Array{Float64}(undef, nEvents, nPar, nPar)

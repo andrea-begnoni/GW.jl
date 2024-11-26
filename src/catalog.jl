@@ -467,7 +467,7 @@ function GenerateCatalog(nEvents::Int, population::String; time_delay_in_Myr = 1
             SFR,
             "_td_",
             time_delay_in_Myr,
-            "Myrs_" * format * ".h5",
+            "Myrs.h5",
         )
     else
         mkpath("catalogs/")
@@ -799,7 +799,7 @@ function GenerateCatalog(nEvents::Int, population::String; time_delay_in_Myr = 1
     dL = get_dL(z, clight, H0, Omega0_m, Omega0_Lambda) ./ 1e3 # Gpc
     date = Dates.now()
     date_format = string(Dates.format(date, "e dd u yyyy HH:MM:SS"))
-
+    println("Name of the catalog: ", name_file)
     h5open(name_file, "w") do file
         attributes(file)["format"] = "GWJulia"
         attributes(file)["number_events"] = nEvents
