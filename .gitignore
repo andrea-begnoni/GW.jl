@@ -5,6 +5,7 @@ Fishers/
 test.ipynb
 test/runtest.ipynb
 docs/build/
+src/waveforms/
 
 *jpmod
 *.ipynb_checkpoints/

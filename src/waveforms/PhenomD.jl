@@ -5,19 +5,6 @@
 #############################################################
 
 
-
-function _readQNMgrid_a(pathWF::String)
-    return readdlm(pathWF * "QNMData_a.txt")[:, 1]   # [:,1] is to make it a 1D array instead of a 2D array
-end
-
-function _readQNMgrid_fring(pathWF::String)
-    return readdlm(pathWF * "QNMData_fring.txt")[:, 1]   # [:,1] is to make it a 1D array instead of a 2D array
-end
-
-function _readQNMgrid_fdamp(pathWF::String)
-    return readdlm(pathWF * "QNMData_fdamp.txt")[:, 1]   # [:,1] is to make it a 1D array instead of a 2D array
-end
-
 """
 ToDo: Need documentation
 """

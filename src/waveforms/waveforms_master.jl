@@ -15,7 +15,7 @@ using Roots
 using LinearAlgebra
 
 
-export TaylorF2, PhenomD, PhenomD_NRTidal, PhenomHM, PhenomNSBH, PhenomXAS, PhenomXHM, Model
+export TaylorF2, PhenomD, PhenomD_NRTidal, PhenomHM, PhenomNSBH, PhenomXAS, PhenomXHM, PhenomD_BGR, Model
 export Ampl, Phi, PolAbs, Pol, _npar, _event_type, _available_waveforms, _fcut, _finalspin, _radiatednrg, _tau_star, _list_polarizations, hphc
 
 # Define an abstract type for the models
@@ -133,8 +133,10 @@ struct PhenomXAS <: GrModel end
 
 struct PhenomXHM <: GrModel end
 
+struct PhenomD_BGR <: GrModel end
+
 function _available_waveforms()
-    return ["TaylorF2", "PhenomD", "PhenomHM", "PhenomD_NRTidal", "PhenomNSBH", "PhenomXAS", "PhenomXHM"]
+    return ["TaylorF2", "PhenomD", "PhenomHM", "PhenomD_NRTidal", "PhenomNSBH", "PhenomXAS", "PhenomXHM", "PhenomD_BGR"]
 end
 
 
@@ -158,8 +160,10 @@ function _available_waveforms(waveform::String)
         return PhenomXAS()
     elseif waveform == "PhenomXHM"
         return PhenomXHM()
+    elseif waveform == "PhenomD_BGR"
+        return PhenomD_BGR()
     else
-        error("Waveform not available. Choose between: TaylorF2, PhenomD, PhenomHM, PhenomD_NRTidal, PhenomNSBH, PhenomXAS")
+        error("Waveform not available. Choose between: TaylorF2, PhenomD, PhenomHM, PhenomD_NRTidal, PhenomNSBH, PhenomXAS, PhenomXHM, PhenomD_BGR")
     end
 end
 ##############################################################################
@@ -173,6 +177,7 @@ include("PhenomD_NRTidalv2.jl")
 include("PhenomNSBH.jl")
 include("PhenomXAS.jl")
 include("PhenomXHM.jl")
+include("PhenomD_BGR.jl")
 include("ConnectionFunctionsXAS.jl") # This is needed for PhenomXHM
 
 ##############################################################################
@@ -213,6 +218,20 @@ struct TF2coeffsStructure
     seven::Union{Float64,ForwardDiff.Dual}
 end
 
+struct TF2coeffsStructure_BGR
+    minus_two::Union{Float64,ForwardDiff.Dual} # added for PhenomD_BGR
+    zero::Union{Float64,ForwardDiff.Dual}
+    one::Union{Float64,ForwardDiff.Dual}
+    two::Union{Float64,ForwardDiff.Dual}
+    three::Union{Float64,ForwardDiff.Dual}
+    four::Union{Float64,ForwardDiff.Dual}
+    five::Union{Float64,ForwardDiff.Dual}
+    five_log::Union{Float64,ForwardDiff.Dual}
+    six::Union{Float64,ForwardDiff.Dual}
+    six_log::Union{Float64,ForwardDiff.Dual}
+    seven::Union{Float64,ForwardDiff.Dual}
+end
+
 struct PhiInspcoeffsStructure
     initial_phasing::Union{Float64,ForwardDiff.Dual}
     two_thirds::Union{Float64,ForwardDiff.Dual}
@@ -230,6 +249,23 @@ struct PhiInspcoeffsStructure
     two::Union{Float64,ForwardDiff.Dual}
 end
 
+struct PhiInspcoeffsStructure_BGR
+    initial_phasing::Union{Float64,ForwardDiff.Dual}
+    two_thirds::Union{Float64,ForwardDiff.Dual}
+    third::Union{Float64,ForwardDiff.Dual}
+    third_log::Union{Float64,ForwardDiff.Dual}
+    log::Union{Float64,ForwardDiff.Dual}
+    min_third::Union{Float64,ForwardDiff.Dual}
+    min_two_thirds::Union{Float64,ForwardDiff.Dual}
+    min_one::Union{Float64,ForwardDiff.Dual}
+    min_four_thirds::Union{Float64,ForwardDiff.Dual}
+    min_five_thirds::Union{Float64,ForwardDiff.Dual}
+    min_seven_thirds::Union{Float64,ForwardDiff.Dual} # added for PhenomD_BGR
+    one::Union{Float64,ForwardDiff.Dual}
+    four_thirds::Union{Float64,ForwardDiff.Dual}
+    five_thirds::Union{Float64,ForwardDiff.Dual}
+    two::Union{Float64,ForwardDiff.Dual}
+end
 
 struct AcoeffsStructure
     two_thirds::Union{Float64,ForwardDiff.Dual}
@@ -425,6 +461,68 @@ end
 helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
 """
 function Ampl(model::PhenomD,
+    f,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    Lambda1,
+    Lambda2;
+    fcutPar = 0.2,
+    fInsJoin_Ampl = 0.014,
+    GMsun_over_c3 = uc.GMsun_over_c3,
+    GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc,
+    container = nothing,
+)
+
+    return Ampl(model, f, mc, eta, chi1, chi2, dL, fcutPar = fcutPar, fInsJoin_Ampl = fInsJoin_Ampl, GMsun_over_c3 = GMsun_over_c3, GMsun_over_c2_Gpc = GMsun_over_c2_Gpc, container = container)
+end
+
+
+##############################################################################
+#
+#                              PhenomD_BGR
+#
+##############################################################################
+
+"""
+Returns the number of parameter of a struct<:Model as integer number. 
+"""
+function _npar(model::PhenomD_BGR)
+    return 11
+end
+
+"""
+Returns the event_type of a struct<:Model as a string.
+"""
+function _event_type(model::PhenomD_BGR)
+    return "BBH"
+end
+
+# """ 
+# helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
+# """
+# function Phi(model::PhenomD_BGR,
+#     f,
+#     mc,
+#     eta,
+#     chi1,
+#     chi2,
+#     Lambda1,
+#     Lambda2,
+#     fInsJoin_PHI = 0.018,
+#     fcutPar = 0.2,
+#     GMsun_over_c3 = uc.GMsun_over_c3,
+#     container = nothing,
+# )
+#     return Phi(model, f, mc, eta, chi1, chi2, beta, epsilon, fInsJoin_PHI=fInsJoin_PHI, fcutPar=fcutPar, GMsun_over_c3=GMsun_over_c3, container=container)
+# end
+
+""" 
+helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
+"""
+function Ampl(model::PhenomD_BGR,
     f,
     mc,
     eta,
