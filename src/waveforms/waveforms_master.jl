@@ -17,7 +17,8 @@ using LinearAlgebra
 
 export TaylorF2, PhenomD, PhenomD_NRTidal, PhenomHM, PhenomNSBH, PhenomXAS, PhenomXHM, Model
 
-export Ampl, Phi, _npar, _event_type, _available_waveforms, _fcut, _finalspin, _radiatednrg, _tau_star, hphc
+export Ampl, Phi, _npar, _event_type, _available_waveforms, _fcut, _finalspin, _radiatednrg, _tau_star, hphc,
+        _readQNMgrid_a, _readQNMgrid_fring, _readQNMgrid_fdamp
 # Define an abstract type for the models
 abstract type Model end
 
