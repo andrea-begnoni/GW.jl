@@ -183,13 +183,13 @@ function CovMatrix(Fisher::Matrix{Float64}; debug = true, threshold = 5e-2, call
             try 
                 Fisher_BF = BigFloat.(Fisher) # convert Fisher matrix to BigFloat (BF)
                 covMatrix = inv(cholesky(Fisher_BF)) 
-                return covMatrix
+                return Float64.(covMatrix)
             catch
                 idx = 3
                 if debug == true
                     println("Inversion failed with 128 bit precision")
                 end
-                return covMatrix
+                return zeros(size(Fisher))
             end
 
 
@@ -227,7 +227,6 @@ function CovMatrix(Fisher::Matrix{Float64}; debug = true, threshold = 5e-2, call
             if debug == true
                 println("Inversion error: ", inversion_error_)
                 println("Inversion error before normalization: ", inversion_error)
-                println(idx)
             end
 
             if inversion_error_ < inversion_error
@@ -256,14 +255,14 @@ function CovMatrix(Fisher::Matrix{Float64}; debug = true, threshold = 5e-2, call
             try 
                 Fisher_BF = BigFloat.(Fisher) # convert Fisher matrix to BigFloat (BF)
                 covMatrix = inv(cholesky(Fisher_BF))
-                return covMatrix 
+                return Float64.(covMatrix) 
             catch
                 idx = 3
                 # covMatrix = zeros(size(Fisher))
                 if debug == true
                     println("Inversion failed with 128 bit precision")
                 end
-                return covMatrix
+                return zeros(size(Fisher))
             end
 
 
@@ -291,6 +290,7 @@ function CovMatrix(Fisher::Matrix{Float64}; debug = true, threshold = 5e-2, call
         if debug == true
             println("Inversion successful")
         end
+        idx = 0 # successful inversion
     end
 
 
