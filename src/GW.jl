@@ -22,7 +22,7 @@ module GW
 include("utils.jl")
 #include("waveform.jl")
 include("waveforms/waveforms_master.jl")
-include("detector.jl")
+include("detector/detector.jl")
 include("catalog.jl")
 
 using .waveform
