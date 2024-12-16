@@ -1,6 +1,3 @@
-
-
-
 """
 Compute the *signal-to-noise-ratio*, SNR, as a function of the parameters of the event, as measured a single detector. 
 The SNR is computed as the square root of the integral of the signal-to-noise ratio squared.
@@ -53,8 +50,7 @@ function SNR(model::Model,
     iota::Float64,
     psi::Float64,
     tcoal::Float64,
-    Lambda1=0.0,
-    Lambda2=0.0;
+    optional_param...;
     fmin=2.0,
     fmax = nothing,
     res = 1000,
@@ -62,6 +58,19 @@ function SNR(model::Model,
     ampl_precomputation = nothing,
 )
 
+    #extract tidal diformabilites
+    if _event_type(model::Model) == "BBH"
+        Lambda1 = 0.
+        Lambda2 = 0.
+    elseif _event_type(model::Model) == "BNS"
+        Lambda1 = optional_param[1]
+        Lambda2 = optional_param[2]
+    elseif _event_type(model::Model) == "NSBH"
+        Lambda1 = optional_param[1]
+        Lambda2 = 0.
+    else
+        #ToDo: Print error
+    end
     
     if isnothing(fmax)
         fcut = waveform._fcut(model, mc, eta, Lambda1, Lambda2)
@@ -92,8 +101,7 @@ function SNR(model::Model,
                 chi2,
                 dL,
                 iota,
-                Lambda1,
-                Lambda2 
+                optional_param... 
             )
         else
             ampl_precomputation = ampl_precomputation
@@ -192,8 +200,7 @@ function SNR(model::Model,
     iota::Float64,
     psi::Float64,
     tcoal::Float64,
-    Lambda1 = 0.0,
-    Lambda2 = 0.0;
+    optional_param...;
     fmin=2.0,
     fmax = nothing,
     res = 1000,
@@ -202,6 +209,21 @@ function SNR(model::Model,
 )
 ##########################
 ## This part is to precompute the amplitude of the waveform which is the longest part of the computation
+    
+    #extract tidal diformabilites
+    if _event_type(model::Model) == "BBH"
+        Lambda1 = 0.
+        Lambda2 = 0.
+    elseif _event_type(model::Model) == "BNS"
+        Lambda1 = optional_param[1]
+        Lambda2 = optional_param[2]
+    elseif _event_type(model::Model) == "NSBH"
+        Lambda1 = optional_param[1]
+        Lambda2 = 0.
+    else
+        #ToDo: Print error
+    end
+
     if isnothing(fmax)
         fcut = waveform._fcut(model, mc, eta, Lambda1, Lambda2)
     else
@@ -222,8 +244,7 @@ function SNR(model::Model,
             chi2,
             dL,
             iota,
-            Lambda1,
-            Lambda2;
+            optional_param...;
         )
     else 
         ampl_precomputation = nothing
@@ -245,8 +266,7 @@ function SNR(model::Model,
             iota,
             psi,
             tcoal,
-            Lambda1,
-            Lambda2,
+            optional_param...,
             fmin=fmin,
             fmax=fmax,
             res=res,
@@ -279,8 +299,7 @@ function SNR(model::Model,
     iota::AbstractArray,
     psi::AbstractArray,
     tcoal::AbstractArray,
-    Lambda1=0.0,
-    Lambda2=0.0;
+    optional_param...;
     fmin=2.0,
     fmax = nothing,
     res = 1000,
@@ -293,52 +312,59 @@ function SNR(model::Model,
     nEvents = length(mc)
     SNRs = Vector{Float64}(undef, nEvents)
 
-    if typeof(model) == PhenomD || typeof(model) == PhenomHM || typeof(model) == PhenomXAS || typeof(model) == PhenomXHM
+    #check correct length of optional_parameters
+    for op in optional_param
+        if length(op) != nEvents
+            trow(DomainError(op, "Lenght of each optional parameter must be a vectors with the same length as the number of events!"))
+        end
+    end
+
+    #Define/extract tidal diformabilites
+    if _event_type(model::Model) == "BBH"
         Lambda1 = zeros(nEvents)
         Lambda2 = zeros(nEvents)
-
-    elseif typeof(model) == PhenomNSBH
+    elseif _event_type(model::Model) == "BNS"
+        Lambda1 = optional_param[1]
+        Lambda2 = optional_param[2]
+        if name_folder == "BBH"
+            name_folder = "BNS"
+        end
+    elseif _event_type(model::Model) == "NSBH"
+        Lambda1 = optional_param[1]
         Lambda2 = zeros(nEvents)
         if name_folder == "BBH"
             name_folder = "NSBH"
         end
-
-    elseif typeof(model) == TaylorF2
-        if Lambda1 == 0.
-            Lambda1 = zeros(nEvents)
-        end
-        if Lambda2 == 0.
-            Lambda2 = zeros(nEvents)
-        end
-        
     else
-        if name_folder == "BBH"
-            name_folder = "BNS"
-        end
-
+        #ToDo: Print error
     end
 
     elapsed_time = @elapsed @showprogress desc="Computing SNRs..."  @threads for ii in 1:nEvents  
-                    SNRs[ii]=SNR(
-                        model,
-                        detector,
-                        mc[ii], 
-                        eta[ii], 
-                        chi1[ii], 
-                        chi2[ii], 
-                        dL[ii], 
-                        theta[ii], 
-                        phi[ii], 
-                        iota[ii], 
-                        psi[ii], 
-                        tcoal[ii],
-                        Lambda1[ii],
-                        Lambda2[ii], 
-                        fmin=fmin, 
-                        fmax=fmax, 
-                        res = res, 
-                        useEarthMotion = useEarthMotion,
-                        precomputation = precomputation)
+                    
+        optional_param_ii = []
+        for op in optional_param
+            append!(optional_param_ii, op[ii])
+        end
+
+        SNRs[ii]=SNR(
+            model,
+            detector,
+            mc[ii], 
+            eta[ii], 
+            chi1[ii], 
+            chi2[ii], 
+            dL[ii], 
+            theta[ii], 
+            phi[ii], 
+            iota[ii], 
+            psi[ii], 
+            tcoal[ii],
+            optional_param_ii..., 
+            fmin=fmin, 
+            fmax=fmax, 
+            res = res, 
+            useEarthMotion = useEarthMotion,
+            precomputation = precomputation)
     end 
 
     println("SNRs computed!")
@@ -371,7 +397,7 @@ function SNR(model::Model,
             end   
             
             write(file, "SNRs", SNRs) 
-            if save_catalog 
+            if save_catalog & typeof(model) <: GrModel 
                 write(file, "mc", mc)
                 write(file, "eta", eta)
                 write(file, "chi1", chi1)
@@ -382,6 +408,8 @@ function SNR(model::Model,
                 write(file, "iota", iota)
                 write(file, "psi", psi)
                 write(file, "tcoal", tcoal)
+                # Lambdas are well defined!
+                # See above
                 write(file, "Lambda1", Lambda1)
                 write(file, "Lambda2", Lambda2)
             end

@@ -56,8 +56,7 @@ function FisherMatrix(model::Model,
     psi::Float64,
     tcoal::Float64,
     phiCoal::Float64,
-    Lambda1=0.,
-    Lambda2=0.;
+    optional_param...;
     res = 1000,
     useEarthMotion = false,
     alpha = 0.0,
@@ -85,8 +84,7 @@ function FisherMatrix(model::Model,
             psi,
             tcoal,
             phiCoal,
-            Lambda1,
-            Lambda2,
+            optional_param...,
             rho_thres=rho_thres,
             res = res,
             useEarthMotion = useEarthMotion,
@@ -111,8 +109,7 @@ function FisherMatrix(model::Model,
             psi,
             tcoal,
             phiCoal,
-            Lambda1,
-            Lambda2,
+            optional_param...,
             rho_thres=rho_thres,
             res = res,
             useEarthMotion = useEarthMotion,
@@ -147,8 +144,7 @@ function FisherMatrix_internal(model::Model,
     psi::Float64,
     tcoal::Float64,
     phiCoal::Float64,
-    Lambda1=0.,
-    Lambda2=0.;
+    optional_param...;
     res = 1000,
     useEarthMotion = false,
     alpha = 0.0,
@@ -157,6 +153,20 @@ function FisherMatrix_internal(model::Model,
     fmax=nothing,
     return_SNR = false,
 )
+
+    #Define/extract tidal diformabilites
+    if _event_type(model::Model) == "BBH"
+        Lambda1 = 0.
+        Lambda2 = 0.
+    elseif _event_type(model::Model) == "BNS"
+        Lambda1 = optional_param[1]
+        Lambda2 = optional_param[2]
+    elseif _event_type(model::Model) == "NSBH"
+        Lambda1 = optional_param[1]
+        Lambda2 = 0.
+    else
+        #ToDo: Print error
+    end
 
     if model == TaylorF2()
         nPar = _npar(model, Lambda1, Lambda2)
@@ -190,8 +200,7 @@ function FisherMatrix_internal(model::Model,
             iota,
             psi,
             tcoal,
-            Lambda1,
-            Lambda2,
+            optional_param...,
             fmin = fmin,
             fmax = fmax,
             res = res,
@@ -217,8 +226,8 @@ function FisherMatrix_internal(model::Model,
     strainAutoDiff_real = Matrix{Float64}(undef, res, nPar)
     strainAutoDiff_imag = Matrix{Float64}(undef, res, nPar)
     
-    event_parameter = [mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1, Lambda2]
-    event_parameter = event_parameter[1:nPar] # cut off non-required parameter,  
+    event_parameter = [mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, optional_param...]
+    event_parameter = event_parameter[1:nPar] # cut off non-required parameter, ToDo: is this still required?   
     strainAutoDiff_real = ForwardDiff.jacobian(
         x -> real(
             Strain(
@@ -302,8 +311,7 @@ function FisherMatrix(model::Model,
     psi::Float64,
     tcoal::Float64,
     phiCoal::Float64,
-    Lambda1=0.,
-    Lambda2=0.;
+    optional_param...;
     res = 1000,
     useEarthMotion = false,
     rho_thres=12.,
@@ -314,8 +322,21 @@ function FisherMatrix(model::Model,
     return_SNR = false,
 )
 
-    # compute SNR and procede only if it is above the threshold
+    #Define/extract tidal diformabilites
+    if _event_type(model::Model) == "BBH"
+        Lambda1 = 0.
+        Lambda2 = 0.
+    elseif _event_type(model::Model) == "BNS"
+        Lambda1 = optional_param[1]
+        Lambda2 = optional_param[2]
+    elseif _event_type(model::Model) == "NSBH"
+        Lambda1 = optional_param[1]
+        Lambda2 = 0.
+    else
+        #ToDo: Print error
+    end
 
+    # compute SNR and procede only if it is above the threshold
     if model == TaylorF2()
         nPar = _npar(model, Lambda1, Lambda2)
     else
@@ -336,8 +357,7 @@ function FisherMatrix(model::Model,
             iota,
             psi,
             tcoal,
-            Lambda1,
-            Lambda2,
+            optional_param...,
             fmin = fmin,
             fmax = fmax,
             res = res,
@@ -372,8 +392,7 @@ function FisherMatrix(model::Model,
                 psi,
                 tcoal,
                 phiCoal,
-                Lambda1,
-                Lambda2,
+                optional_param...,
                 rho_thres=nothing,
                 res = res,
                 useEarthMotion = useEarthMotion,
@@ -397,8 +416,7 @@ function FisherMatrix(model::Model,
                 psi,
                 tcoal,
                 phiCoal,
-                Lambda1,
-                Lambda2,
+                optional_param...,
                 rho_thres=nothing,
                 res = res,
                 useEarthMotion = useEarthMotion,
@@ -436,8 +454,7 @@ function FisherMatrix_Tdetector(model::Model,
     psi::Float64,
     tcoal::Float64,
     phiCoal::Float64,
-    Lambda1=0.,
-    Lambda2=0.;
+    optional_param...;
     res = 1000,
     useEarthMotion = false,
     rho_thres=12.,
@@ -449,7 +466,21 @@ function FisherMatrix_Tdetector(model::Model,
     return_SNR = false,    
 )
 
-    if rho_thres !==nothing
+    if rho_thres !== nothing
+
+        #Define/extract tidal diformabilites
+        if _event_type(model::Model) == "BBH"
+            Lambda1 = 0.
+            Lambda2 = 0.
+        elseif _event_type(model::Model) == "BNS"
+            Lambda1 = optional_param[1]
+            Lambda2 = optional_param[2]
+        elseif _event_type(model::Model) == "NSBH"
+            Lambda1 = optional_param[1]
+            Lambda2 = 0.
+        else
+            #ToDo: Print error
+        end
 
         if model == TaylorF2()
             nPar = _npar(model, Lambda1, Lambda2)
@@ -470,8 +501,7 @@ function FisherMatrix_Tdetector(model::Model,
             iota,
             psi,
             tcoal,
-            Lambda1,
-            Lambda2,
+            optional_param...,
             fmin = fmin,
             fmax = fmax,
             res = res,
@@ -486,12 +516,10 @@ function FisherMatrix_Tdetector(model::Model,
         end
     end
 
-
-
-        # We write the T-detector as three detectors in slightly different positions
-        # Detector has to be in the plane orthogonal to the radius
-        # write coordinates on a tangent plane (https://en.wikipedia.org/wiki/Local_tangent_plane_coordinates)
-        # Note the minus sign because theta goes from north to south
+    # We write the T-detector as three detectors in slightly different positions
+    # Detector has to be in the plane orthogonal to the radius
+    # write coordinates on a tangent plane (https://en.wikipedia.org/wiki/Local_tangent_plane_coordinates)
+    # Note the minus sign because theta goes from north to south
 
     if coordinate_shift == true
         lat = detector.latitude_rad
@@ -537,8 +565,7 @@ function FisherMatrix_Tdetector(model::Model,
         psi,
         tcoal,
         phiCoal,
-        Lambda1,
-        Lambda2,
+        optional_param...,
         res = res,
         useEarthMotion = useEarthMotion,
         rho_thres = nothing,
@@ -561,8 +588,7 @@ function FisherMatrix_Tdetector(model::Model,
         psi,
         tcoal,
         phiCoal,
-        Lambda1,
-        Lambda2,
+        optional_param...,
         res = res,
         useEarthMotion = useEarthMotion,
         rho_thres = nothing,
@@ -585,8 +611,7 @@ function FisherMatrix_Tdetector(model::Model,
         psi,
         tcoal,
         phiCoal,
-        Lambda1,
-        Lambda2,
+        optional_param...,
         res = res,
         useEarthMotion = useEarthMotion,
         rho_thres = nothing,
@@ -662,8 +687,7 @@ function FisherMatrix(model::Model,
     psi::AbstractArray,
     tcoal::AbstractArray,
     phiCoal::AbstractArray,
-    Lambda1=nothing,
-    Lambda2=nothing;
+    optional_param...;
     fmin=2.0,
     fmax = nothing,
     res = 1000,
@@ -678,15 +702,24 @@ function FisherMatrix(model::Model,
 )
     nEvents = length(mc)    
 
-    if name_folder === nothing
-        name_folder = _event_type(model) 
-    end
-
-    if Lambda1===nothing
-        Lambda1 = zeros(size(mc))
-    end
-    if Lambda2===nothing
-        Lambda2 = zeros(size(mc))
+    #Define/extract tidal diformabilites
+    if _event_type(model::Model) == "BBH"
+        Lambda1 = zeros(nEvents)
+        Lambda2 = zeros(nEvents)
+    elseif _event_type(model::Model) == "BNS"
+        Lambda1 = optional_param[1]
+        Lambda2 = optional_param[2]
+        if name_folder == "BBH"
+            name_folder = "BNS"
+        end
+    elseif _event_type(model::Model) == "NSBH"
+        Lambda1 = optional_param[1]
+        Lambda2 = zeros(nEvents)
+        if name_folder == "BBH"
+            name_folder = "NSBH"
+        end
+    else
+        #ToDo: Print error
     end
 
     if model == TaylorF2()
@@ -695,10 +728,21 @@ function FisherMatrix(model::Model,
         nPar = _npar(model)
     end
 
+    # restructure the optional parameter
+    optional_param_reshaped = Array{Vector{Float64}}(undef, nEvents)
+    for ii in 1:nEvents  
+        optional_param_ii = []
+        for op in optional_param
+            append!(optional_param_ii, op[ii])
+        end
+        optional_param_reshaped[ii] = optional_param_ii
+    end
+
     Fishers = Array{Float64}(undef, nEvents, nPar, nPar)
     if return_SNR == true
         SNRs = Array{Float64}(undef, nEvents)
         elapsed_time = @elapsed @showprogress desc="Computing Fishers and SNRs..." @threads for ii in 1:nEvents  
+
             Fishers[ii,:,:], SNRs[ii] = FisherMatrix(
                 model,
                 detector, 
@@ -713,8 +757,7 @@ function FisherMatrix(model::Model,
                 psi[ii], 
                 tcoal[ii], 
                 phiCoal[ii], 
-                Lambda1[ii], 
-                Lambda2[ii], 
+                optional_param_reshaped[ii]..., 
                 fmin=fmin, 
                 fmax=fmax, 
                 res = res, 
@@ -767,6 +810,7 @@ function FisherMatrix(model::Model,
                     write(file, "iota", iota)
                     write(file, "psi", psi)
                     write(file, "tcoal", tcoal)
+                    # Lambda is well defined, see above
                     write(file, "Lambda1", Lambda1)
                     write(file, "Lambda2", Lambda2)
                 end
@@ -775,6 +819,7 @@ function FisherMatrix(model::Model,
         return Fishers, SNRs
     else
         elapsed_time = @elapsed  @showprogress desc="Computing Fishers..."  @threads for ii in 1:nEvents  
+
                     Fishers[ii,:,:]=FisherMatrix(
                         model,
                         detector,
@@ -789,8 +834,7 @@ function FisherMatrix(model::Model,
                         psi[ii], 
                         tcoal[ii], 
                         phiCoal[ii],
-                        Lambda1[ii],
-                        Lambda2[ii],
+                        optional_param_reshaped[ii]...,
                         fmin=fmin, 
                         fmax=fmax, 
                         res = res, 
@@ -837,6 +881,7 @@ function FisherMatrix(model::Model,
                     write(file, "iota", iota)
                     write(file, "psi", psi)
                     write(file, "tcoal", tcoal)
+                    # Lambda is well defined, see above.
                     write(file, "Lambda1", Lambda1)
                     write(file, "Lambda2", Lambda2)
                 end
