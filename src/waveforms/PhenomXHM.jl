@@ -43,6 +43,21 @@ function Pol(model::PhenomXHM,
 
 end
 
+"""
+ToDo: Need documentation
+"""
+function Phi(model::PhenomXHM,
+    f,
+    mc,
+    eta,
+    chi1,
+    chi2;
+    fInsJoin_PHI = 0.018,
+    fcutPar = 0.2,
+    GMsun_over_c3 = uc.GMsun_over_c3,
+)
+    return f .* 0.0
+end
 
 # *************************************************
 #                                                  
