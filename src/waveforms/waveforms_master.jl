@@ -15,7 +15,8 @@ using Roots
 using LinearAlgebra
 
 
-export TaylorF2, PhenomD, PhenomD_NRTidal, PhenomHM, PhenomNSBH, PhenomXAS, PhenomXHM, Model, GrModel, BgrModel
+export TaylorF2, PhenomD, PhenomD_NRTidal, PhenomHM, PhenomNSBH, PhenomXAS, PhenomXHM, PhenomD_TIGER
+export Model, GrModel, BgrModel
 export Ampl, Phi, PolAbs, Pol, _npar, _event_type, _available_waveforms, _fcut, _finalspin, _radiatednrg, _tau_star, _list_polarizations, hphc
 
 # Define an abstract type for the models
@@ -119,6 +120,7 @@ function _list_polarizations(model::GrModel)
  end
 
 # Define concrete types for each model
+# GR Waveforms
 struct PhenomD <: GrModel end
 
 struct PhenomHM <: GrModel end
@@ -133,8 +135,11 @@ struct PhenomXAS <: GrModel end
 
 struct PhenomXHM <: GrModel end
 
+#Beyond GR Waveforms
+struct PhenomD_TIGER <: BgrModel end
+
 function _available_waveforms()
-    return ["TaylorF2", "PhenomD", "PhenomHM", "PhenomD_NRTidal", "PhenomNSBH", "PhenomXAS", "PhenomXHM"]
+    return ["TaylorF2", "PhenomD", "PhenomHM", "PhenomD_NRTidal", "PhenomNSBH", "PhenomXAS", "PhenomXHM", "PhenomD_TIGER"]
 end
 
 
@@ -158,6 +163,7 @@ function _available_waveforms(waveform::String)
         return PhenomXAS()
     elseif waveform == "PhenomXHM"
         return PhenomXHM()
+    elseif waveform == "PhenomD_TIGER"
     else
         error("Waveform not available. Choose between: TaylorF2, PhenomD, PhenomHM, PhenomD_NRTidal, PhenomNSBH, PhenomXAS")
     end
@@ -166,6 +172,7 @@ end
 #   INCLUDE ALL THE WAVEFORMS
 ##############################################################################
 
+# GR waveforms
 include("TaylorF2.jl")
 include("PhenomD.jl")
 include("PhenomHM.jl")
@@ -174,6 +181,9 @@ include("PhenomNSBH.jl")
 include("PhenomXAS.jl")
 include("PhenomXHM.jl")
 include("ConnectionFunctionsXAS.jl") # This is needed for PhenomXHM
+
+#Beyond GR waveforms
+include("PhenomD_TIGER.jl")
 
 ##############################################################################
 #   STRUCTURE USED IN THE MODULE
@@ -640,6 +650,75 @@ function Ampl(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, Lambda1, Lambda2; cl
     return Ampl(model, f, mc, dL, clightGpc = clightGpc, GMsun_over_c3 = GMsun_over_c3)
 end
 
+##############################################################################
+#
+#                              PhenomD_TIGER
+#
+##############################################################################
+
+"""
+Returns the number of parameter of a struct<:Model as integer number. 
+"""
+function _npar(model::PhenomD_TIGER)
+    return 13
+end
+
+"""
+Returns the event_type of a struct<:Model as a string.
+"""
+function _event_type(model::PhenomD_TIGER)
+    return "BBH"
+end
+
+""" 
+helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
+"""
+function Phi(model::PhenomD_TIGER,
+    f,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    optional_param... ;
+    fInsJoin_PHI = 0.018,
+    fcutPar = 0.2,
+    GMsun_over_c3 = uc.GMsun_over_c3,
+    container = nothing,
+)
+
+    o1 = optional_param[1]
+    o2 = optional_param[2]
+    return Phi(model, f, mc, eta, chi1, chi2, o1, o2, fInsJoin_PHI=fInsJoin_PHI, fcutPar=fcutPar, GMsun_over_c3=GMsun_over_c3, container=container)
+end
+
+""" 
+helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
+"""
+function Ampl(model::PhenomD_TIGER,
+    f,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    optional_param... ;
+    fcutPar = 0.2,
+    fInsJoin_Ampl = 0.014,
+    GMsun_over_c3 = uc.GMsun_over_c3,
+    GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc,
+    container = nothing,
+)
+    o1 = optional_param[1]
+    o2 = optional_param[2]
+    return Ampl(model, f, mc, eta, chi1, chi2, dL, o1, o2, fcutPar = fcutPar, fInsJoin_Ampl = fInsJoin_Ampl, GMsun_over_c3 = GMsun_over_c3, GMsun_over_c2_Gpc = GMsun_over_c2_Gpc, container = container)
+end
+
+"""
+Returns polarizations of the PhenomD_TIGER waveform
+"""
+function _list_polarizations(model::PhenomD_TIGER) 
+    return ["plus", "cross"]
+ end
 
 ##############################################################################
 #   FUNCTIONS USED BY MANY WAVEFORMS

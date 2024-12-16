@@ -199,6 +199,58 @@ function PolarizationDet(model::GrModel,
 end
 
 """
+Need documentation 
+"""
+function PolarizationDet(model::Model,
+    DetectorCoordinates::DetectorStructure,
+    f::AbstractArray,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    theta,
+    phi,
+    iota,
+    psi,
+    tcoal,
+    optional_param... ;
+    alpha = 0.0,
+    useEarthMotion = false
+)
+
+    pol = Pol(
+        model,
+        f,
+        mc,
+        eta, 
+        chi1,
+        chi2,
+        dL,
+        iota,
+        optional_param... 
+    )
+
+    pol_det = PolarizationDet(
+        model,
+        DetectorCoordinates,
+        pol,
+        f,
+        mc,
+        eta,
+        theta,
+        phi,
+        psi,
+        tcoal;
+        alpha = alpha,
+        useEarthMotion = useEarthMotion
+    )
+
+    return pol_det
+
+end
+
+"""
 ToDo: New documentation for this function
 This function computes the phase of the waveform seen by the detector, given a waveform model. It already includes the phase due to the Earth motion.
 
@@ -385,6 +437,73 @@ function Strain(model::GrModel,
         chi2,
         Lambda1,
         Lambda2,
+    )
+
+    strain_det = Strain(
+        model,
+        DetectorCoordinates,
+        pol_det,
+        phase_wave,
+        f,
+        mc,
+        eta,
+        theta,
+        phi,
+        tcoal,
+        phiCoal,
+        useEarthMotion = useEarthMotion
+    )
+        
+    return strain_det
+
+end
+
+function Strain(model::Model,
+    DetectorCoordinates::DetectorStructure,
+    f::AbstractArray,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    theta,
+    phi,
+    iota,
+    psi,
+    tcoal,
+    phiCoal,
+    optional_param...;
+    useEarthMotion = false,
+    alpha = 0.0
+)
+
+    pol_det = PolarizationDet(
+        model,
+        DetectorCoordinates,
+        f,
+        mc,
+        eta,
+        chi1,
+        chi2,
+        dL,
+        theta,
+        phi,
+        iota,
+        psi,
+        tcoal,
+        optional_param...,
+        alpha = alpha,
+        useEarthMotion = useEarthMotion
+    )
+
+    phase_wave = Phi(
+        model,
+        f,
+        mc,
+        eta,
+        chi1,
+        chi2,
+        optional_param...,
     )
 
     strain_det = Strain(
