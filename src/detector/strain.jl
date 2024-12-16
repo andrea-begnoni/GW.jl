@@ -29,9 +29,9 @@ function _patternFunction(
     model::Model,
     DetectorCoordinates::DetectorStructure,
     tRef,
-    theta::Union{Float64,ForwardDiff.Dual},
-    phi::Union{Float64,ForwardDiff.Dual},
-    psi::Union{Float64,ForwardDiff.Dual};
+    theta,
+    phi,
+    psi;
     alpha_grad = 0.0,
 )
 
@@ -108,14 +108,12 @@ function PolarizationDet(model::Model,
     DetectorCoordinates::DetectorStructure,
     pol::AbstractArray,
     f::AbstractArray,
-    mc::Union{Float64,ForwardDiff.Dual},
-    eta::Union{Float64,ForwardDiff.Dual},
-    dL::Union{Float64,ForwardDiff.Dual},
-    theta::Union{Float64,ForwardDiff.Dual},
-    phi::Union{Float64,ForwardDiff.Dual},
-    iota::Union{Float64,ForwardDiff.Dual},  #Is actually not required in the function. ToDo: Remove
-    psi::Union{Float64,ForwardDiff.Dual},
-    tcoal::Union{Float64,ForwardDiff.Dual};
+    mc,
+    eta,
+    theta,
+    phi,
+    psi,
+    tcoal;
     alpha = 0.0,
     useEarthMotion = false
 )
@@ -149,19 +147,19 @@ end
 """
 Need documentation 
 """
-function PolarizationDet(model::Model,
+function PolarizationDet(model::GrModel,
     DetectorCoordinates::DetectorStructure,
     f::AbstractArray,
-    mc::Union{Float64,ForwardDiff.Dual},
-    eta::Union{Float64,ForwardDiff.Dual},
-    chi1::Union{Float64,ForwardDiff.Dual},
-    chi2::Union{Float64,ForwardDiff.Dual},
-    dL::Union{Float64,ForwardDiff.Dual},
-    theta::Union{Float64,ForwardDiff.Dual},
-    phi::Union{Float64,ForwardDiff.Dual},
-    iota::Union{Float64,ForwardDiff.Dual},
-    psi::Union{Float64,ForwardDiff.Dual},
-    tcoal::Union{Float64,ForwardDiff.Dual},
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    theta,
+    phi,
+    iota,
+    psi,
+    tcoal,
     Lambda1 = 0.0,
     Lambda2 = 0.0;
     alpha = 0.0,
@@ -188,10 +186,8 @@ function PolarizationDet(model::Model,
         f,
         mc,
         eta,
-        dL,
         theta,
         phi,
-        iota,
         psi,
         tcoal;
         alpha = alpha,
@@ -240,18 +236,13 @@ function PhaseDet(
     model::Model,
     DetectorCoordinates::DetectorStructure,
     f::AbstractArray,
-    mc::Union{Float64,ForwardDiff.Dual},
-    eta::Union{Float64,ForwardDiff.Dual},
-    chi1::Union{Float64,ForwardDiff.Dual},
-    chi2::Union{Float64,ForwardDiff.Dual},
-    theta::Union{Float64,ForwardDiff.Dual},
-    phi::Union{Float64,ForwardDiff.Dual},
-    tcoal::Union{Float64,ForwardDiff.Dual},
-    phiCoal::Union{Float64,ForwardDiff.Dual},
-    Lambda1 = 0.0,
-    Lambda2 = 0.0;
+    mc,
+    eta,
+    theta,
+    phi,
+    tcoal,
+    phiCoal;
     useEarthMotion = false,
-    phase_precomputation = nothing,
 )
 
     # Phase of the GW signal
@@ -282,17 +273,10 @@ function Strain(model::Model,
     f::AbstractArray,
     mc,
     eta,
-    chi1,
-    chi2,
-    dL,
     theta,
     phi,
-    iota,
-    psi,
     tcoal,
-    phiCoal,
-    Lambda1 = 0.0,
-    Lambda2 = 0.0;
+    phiCoal;
     useEarthMotion = false
 )
 
@@ -302,14 +286,10 @@ function Strain(model::Model,
         f,
         mc,
         eta,
-        chi1,
-        chi2,
         theta,
         phi,
         tcoal,
         phiCoal,
-        Lambda1,
-        Lambda2,
         useEarthMotion = useEarthMotion
     )
         
@@ -356,7 +336,7 @@ This function computes the full strain (complex) as a function of the parameters
     strain = Strain(PhenomD(), CE1Id_coordinates, 1:100, 10.0, 0.25, 0.5, 0.5, 1.0, 0.1, 0.2, 0.3, 0.4, 0.5)
     ```
 """
-function Strain(model::Model,
+function Strain(model::GrModel,
     DetectorCoordinates::DetectorStructure,
     f::AbstractArray,
     mc,
@@ -415,17 +395,10 @@ function Strain(model::Model,
         f,
         mc,
         eta,
-        chi1,
-        chi2,
-        dL,
         theta,
         phi,
-        iota,
-        psi,
         tcoal,
         phiCoal,
-        Lambda1,
-        Lambda2,
         useEarthMotion = useEarthMotion
     )
         
