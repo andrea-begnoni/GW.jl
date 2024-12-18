@@ -121,27 +121,57 @@ function _list_polarizations(model::GrModel)
 
 # Define concrete types for each model
 # GR Waveforms
-struct PhenomD <: GrModel end
+struct PhenomD <: GrModel 
+    event_type::String 
+    PhenomD() = new("BBH")
+end
 
-struct PhenomHM <: GrModel end
+struct PhenomHM <: GrModel
+    event_type::String 
+    PhenomHM() = new("BBH")
+end
 
-struct TaylorF2 <: GrModel end
+struct PhenomD_NRTidal <: GrModel
+    event_type::String 
+    PhenomD_NRTidal() = new("BNS")
+end
 
-struct PhenomD_NRTidal <: GrModel end
+struct PhenomNSBH <: GrModel 
+    event_type::String 
+    PhenomNSBH() = new("NSBH")
+end
 
-struct PhenomNSBH <: GrModel end
+struct PhenomXAS <: GrModel 
+    event_type::String 
+    PhenomXAS() = new("BBH")
+end
 
-struct PhenomXAS <: GrModel end
+struct PhenomXHM <: GrModel 
+    event_type::String 
+    PhenomXHM() = new("BBH")
+end
 
-struct PhenomXHM <: GrModel end
+struct TaylorF2 <: GrModel 
+    event_type::String 
+    TaylorF2(event_type::String = "BBH") = new(event_type)
+end
 
 #Beyond GR Waveforms
-struct PhenomD_TIGER <: BgrModel end
+struct PhenomD_TIGER <: BgrModel 
+    event_type::String 
+    PhenomD_TIGER() = new("BBH")
+end
+
+"""
+Returns the event_type of a struct<:Model as a string.
+"""
+function _event_type(model::Model)
+    return model.event_type
+end
 
 function _available_waveforms()
     return ["TaylorF2", "PhenomD", "PhenomHM", "PhenomD_NRTidal", "PhenomNSBH", "PhenomXAS", "PhenomXHM", "PhenomD_TIGER"]
 end
-
 
 #@doc "Function to check the available waveforms and return the corresponding model."
 """
@@ -377,13 +407,6 @@ function _npar(model::TaylorF2, Lambda1, Lambda2)
     return 11 + more_par
 end
 
-"""
-Returns the event_type of a struct<:Model as a string.
-"""
-function _event_type(model::TaylorF2)
-    return "BBH"
-end
-
 # function Phi(model::TaylorF2, f, mc, eta, chi1, chi2, Lambda1, Lambda2; GMsun_over_c3 = uc.GMsun_over_c3)
 #     return Phi(model, f, mc, eta, chi1, chi2, GMsun_over_c3 = GMsun_over_c3)
 # end
@@ -403,13 +426,6 @@ Returns the number of parameter of a struct<:Model as integer number.
 """
 function _npar(model::PhenomD)
     return 11
-end
-
-"""
-Returns the event_type of a struct<:Model as a string.
-"""
-function _event_type(model::PhenomD)
-    return "BBH"
 end
 
 """ 
@@ -465,13 +481,6 @@ Returns the number of parameter of a struct<:Model as integer number.
 function _npar(model::PhenomD_NRTidal)
     return 13
 end
-
-"""
-Returns the event_type of a struct<:Model as a string.
-"""
-function _event_type(model::PhenomD_NRTidal)
-    return "BNS"
-end
     
 ##############################################################################
 #
@@ -483,13 +492,6 @@ Returns the number of parameter of a struct<:Model as integer number.
 """
 function _npar(model::PhenomNSBH)
     return 12
-end
-
-"""
-Returns the event_type of a struct<:Model as a string.
-"""
-function _event_type(model::PhenomNSBH)
-    return "NSBH"
 end
 
 """ 
@@ -544,13 +546,6 @@ function _npar(model::PhenomHM)
     return 11
 end
 
-"""
-Returns the event_type of a struct<:Model as a string.
-"""
-function _event_type(model::PhenomHM)
-    return "BBH"
-end
-
 function Phi(model::PhenomHM, f, mc, eta, chi1, chi2, Lambda1, Lambda2; GMsun_over_c3 = uc.GMsun_over_c3)
     return Phi(model, f, mc, eta, chi1, chi2, GMsun_over_c3 = GMsun_over_c3)
 end
@@ -571,13 +566,6 @@ Returns the number of parameter of a struct<:Model as integer number.
 """
 function _npar(model::PhenomXAS)
     return 11
-end
-
-"""
-Returns the event_type of a struct<:Model as a string.
-"""
-function _event_type(model::PhenomXAS)
-    return "BBH"
 end
 
 """
@@ -635,13 +623,6 @@ function _npar(model::PhenomXHM)
     return 11
 end
 
-"""
-Returns the event_type of a struct<:Model as a string.
-"""
-function _event_type(model::PhenomXHM)
-    return "BBH"
-end
-
 function Phi(model::PhenomXHM, f, mc, eta, chi1, chi2, Lambda1, Lambda2; GMsun_over_c3 = uc.GMsun_over_c3)
     return Phi(model, f, mc, eta, chi1, chi2, GMsun_over_c3 = GMsun_over_c3)
 end
@@ -661,13 +642,6 @@ Returns the number of parameter of a struct<:Model as integer number.
 """
 function _npar(model::PhenomD_TIGER)
     return 13
-end
-
-"""
-Returns the event_type of a struct<:Model as a string.
-"""
-function _event_type(model::PhenomD_TIGER)
-    return "BBH"
 end
 
 """ 
