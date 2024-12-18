@@ -96,11 +96,6 @@ function _npar(model::Model)
     error("_npar not implemented for model: $(typeof(model)), or there is an error with the number of input parameters")
 end
 
-function _event_type(model::Model) 
-   # Implementation specific to each model
-   error("_event_type not implemented for model: $(typeof(model)), or there is an error with the number of input parameters")
-end
-
 # Define a function to give an error message if the model is not implemented
 function _list_polarizations(model::Model) 
     # Implementation specific to each model
