@@ -5,6 +5,8 @@ Fishers/
 test.ipynb
 test/runtest.ipynb
 docs/build/
+src/detector_fast.jl
+src/waveforms/PhenomHM_fast.jl
 
 *jpmod
 *.ipynb_checkpoints/
