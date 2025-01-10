@@ -50,7 +50,6 @@ function Phi(model::PhenomD,
     fInsJoin_PHI = 0.018,
     fcutPar = 0.2,
     GMsun_over_c3 = uc.GMsun_over_c3,
-    container = nothing,
 )
 
     # Get the path to the directory of this file
@@ -538,17 +537,16 @@ function Phi(model::PhenomD,
             ),
         ),
     )
-    if typeof(eta) == Float64
-       phi = @. phis + ifelse(fgrid < fcutPar, -t0 * (fgrid - fRef) - phiRef, 0.0)
-       if container !== nothing
-        container .= [phi[i] for i in eachindex(phi)]
-        end
-    else 
-        phi = @. phis + ifelse(fgrid .< fcutPar, -t0 * (fgrid - fRef) - phiRef, ForwardDiff.Dual{typeof(eta).parameters[1]}(0.,zeros(typeof(eta).parameters[3])...))
-        if container !== nothing
-            container .= [phi[i].value for i in eachindex(phi)]
-        end
-    end
+    phi = @. phis + ifelse(fgrid < fcutPar, -t0 * (fgrid - fRef) - phiRef, 0.0)
+    #    if container !== nothing
+    #     container .= [phi[i] for i in eachindex(phi)]
+    #     end
+    # else 
+    #     phi = @. phis + ifelse(fgrid .< fcutPar, -t0 * (fgrid - fRef) - phiRef, ForwardDiff.Dual{typeof(eta).parameters[1]}(0.,zeros(typeof(eta).parameters[3])...))
+    #     if container !== nothing
+    #         container .= [phi[i].value for i in eachindex(phi)]
+    #     end
+    # end
 
 
     return phi
@@ -597,7 +595,6 @@ function Ampl(model::PhenomD,
     fInsJoin_Ampl = 0.014,
     GMsun_over_c3 = uc.GMsun_over_c3,
     GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc,
-    container = nothing,
 )
 
     # Get the path to the directory of this file
@@ -1134,18 +1131,17 @@ function Ampl(model::PhenomD,
             ),
         ),
     )
-    if typeof(eta) == Float64
-        ampl = Overallamp * amp0 .* (fgrid .^ (-7.0 / 6.0)) .* amplitudeIMR
-        if container !== nothing
-            container .= [ampl[i] for i in eachindex(ampl)]
-         end
-    else 
-        ampl = Overallamp * amp0 .* (fgrid .^ (-7.0 / 6.0)) .* amplitudeIMR
+    ampl = Overallamp * amp0 .* (fgrid .^ (-7.0 / 6.0)) .* amplitudeIMR
+    #     if container !== nothing
+    #         container .= [ampl[i] for i in eachindex(ampl)]
+    #      end
+    # else 
+    #     ampl = Overallamp * amp0 .* (fgrid .^ (-7.0 / 6.0)) .* amplitudeIMR
 
-        if container !== nothing
-            container .= [ampl[i].value for i in eachindex(ampl)]
-        end
-    end
+    #     if container !== nothing
+    #         container .= [ampl[i].value for i in eachindex(ampl)]
+    #     end
+    # end
 
     return ampl
 end

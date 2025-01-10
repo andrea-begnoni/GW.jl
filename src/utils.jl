@@ -53,11 +53,11 @@ Function from GWFAST.
 - (float, float) L"\tilde{Lambda}" and L"\delta\tilde{Lambda}", 
 
 """
-function Lamt_delLam_from_Lam12(Lambda1, Lambda2, eta)
+function Lamt_delLam_from_Lam12(eta, Lambda1, Lambda2)
 
     eta2 = eta*eta
 
-    Seta = sqrt(1.0 - 4.0 * eta)  
+    Seta = ifelse(eta<.25,sqrt(1.0 - 4.0 * eta),0.)
         
     Lamt = (8. /13.)*((1. + 7. *eta - 31. *eta2)*(Lambda1 + Lambda2) + Seta*(1. + 9. *eta - 11. *eta2)*(Lambda1 - Lambda2))
     
@@ -80,12 +80,12 @@ Compute the covariance matrix of L"\tilde{Lambda}" and L"\delta\tilde{Lambda}" f
 -  Covariance matrix of L"\tilde{Lambda}" and L"\delta\tilde{Lambda}".
 
 """
-function CovMatrix_Lamt_delLam(Fisher, Lambda1, Lambda2, eta)
+function CovMatrix_Lamt_delLam(Fisher, eta, Lambda1, Lambda2)
 
-    Cov_reduced = CovMatrix(Fisher, debug=false)[[12, 13, 2], [12, 13, 2]]
+    Cov_reduced = CovMatrix(Fisher, debug=false)[[2, 12, 13], [2, 12, 13]]
     # jacobian
-    J1 = ForwardDiff.gradient(x->Lamt_delLam_from_Lam12(x...)[1], [Lambda1, Lambda2, eta])
-    J2 = ForwardDiff.gradient(x->Lamt_delLam_from_Lam12(x...)[2], [Lambda1, Lambda2, eta])
+    J1 = ForwardDiff.gradient(x->Lamt_delLam_from_Lam12(x...)[1], [eta, Lambda1, Lambda2])
+    J2 = ForwardDiff.gradient(x->Lamt_delLam_from_Lam12(x...)[2], [eta, Lambda1, Lambda2])
     J = [J1 J2]'
     # covariance matrix of Lambda tilde and delta Lambda
     Cov_Lamt_delLam = J * Cov_reduced * J'
@@ -225,8 +225,8 @@ function CovMatrix(Fisher::Matrix{Float64}; debug = true, threshold = 5e-2, call
             inversion_error_ = maximum(abs.(Fisher * covMatrix_ - I))
 
             if debug == true
-                println("Inversion error: ", inversion_error_)
                 println("Inversion error before normalization: ", inversion_error)
+                println("Inversion error after normalization: ", inversion_error_)
             end
 
             if inversion_error_ < inversion_error
@@ -255,7 +255,7 @@ function CovMatrix(Fisher::Matrix{Float64}; debug = true, threshold = 5e-2, call
             try 
                 Fisher_BF = BigFloat.(Fisher) # convert Fisher matrix to BigFloat (BF)
                 covMatrix = inv(cholesky(Fisher_BF))
-                return Float64.(covMatrix) 
+                return covMatrix
             catch
                 idx = 3
                 # covMatrix = zeros(size(Fisher))
@@ -278,7 +278,7 @@ function CovMatrix(Fisher::Matrix{Float64}; debug = true, threshold = 5e-2, call
         if debug == true
             println("Inversion failed")
             inversion_error = maximum(abs.(Fisher * covMatrix - I))
-            println("Inversion error: ", inversion_error)
+            println("Inversion error: ", Float64(inversion_error))
         end
 
         if called_by_3D_function
@@ -289,6 +289,8 @@ function CovMatrix(Fisher::Matrix{Float64}; debug = true, threshold = 5e-2, call
     else
         if debug == true
             println("Inversion successful")
+            inversion_error = maximum(abs.(Fisher * covMatrix - I))
+            println("Inversion error: ", Float64(inversion_error))
         end
         idx = 0 # successful inversion
     end
@@ -297,6 +299,10 @@ function CovMatrix(Fisher::Matrix{Float64}; debug = true, threshold = 5e-2, call
 
     # return covMatrix in 64 bit precision
     covMatrix = Float64.(covMatrix)
+
+    if debug == true
+        println()
+    end
 
     if called_by_3D_function
         return covMatrix, idx
