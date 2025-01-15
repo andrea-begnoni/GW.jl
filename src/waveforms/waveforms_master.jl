@@ -153,8 +153,9 @@ end
 
 #Beyond GR Waveforms
 struct PhenomD_TIGER <: BgrModel 
+    PNorder::Float64
     event_type::String 
-    PhenomD_TIGER() = new("BBH")
+    PhenomD_TIGER(PNorder::Float64) = new(PNorder, "BBH")
 end
 
 """
@@ -189,6 +190,7 @@ function _available_waveforms(waveform::String)
     elseif waveform == "PhenomXHM"
         return PhenomXHM()
     elseif waveform == "PhenomD_TIGER"
+        return PhenomD_TIGER()
     else
         error("Waveform not available. Choose between: TaylorF2, PhenomD, PhenomHM, PhenomD_NRTidal, PhenomNSBH, PhenomXAS")
     end
@@ -248,6 +250,20 @@ struct TF2coeffsStructure
     seven::Union{Float64,ForwardDiff.Dual}
 end
 
+struct TF2coeffsStructure_BGR
+    minus_two::Union{Float64,ForwardDiff.Dual} # added for PhenomD_TIGER
+    zero::Union{Float64,ForwardDiff.Dual}
+    one::Union{Float64,ForwardDiff.Dual}
+    two::Union{Float64,ForwardDiff.Dual}
+    three::Union{Float64,ForwardDiff.Dual}
+    four::Union{Float64,ForwardDiff.Dual}
+    five::Union{Float64,ForwardDiff.Dual}
+    five_log::Union{Float64,ForwardDiff.Dual}
+    six::Union{Float64,ForwardDiff.Dual}
+    six_log::Union{Float64,ForwardDiff.Dual}
+    seven::Union{Float64,ForwardDiff.Dual}
+end
+
 struct PhiInspcoeffsStructure
     initial_phasing::Union{Float64,ForwardDiff.Dual}
     two_thirds::Union{Float64,ForwardDiff.Dual}
@@ -265,6 +281,23 @@ struct PhiInspcoeffsStructure
     two::Union{Float64,ForwardDiff.Dual}
 end
 
+struct PhiInspcoeffsStructure_BGR
+    initial_phasing::Union{Float64,ForwardDiff.Dual}
+    two_thirds::Union{Float64,ForwardDiff.Dual}
+    third::Union{Float64,ForwardDiff.Dual}
+    third_log::Union{Float64,ForwardDiff.Dual}
+    log::Union{Float64,ForwardDiff.Dual}
+    min_third::Union{Float64,ForwardDiff.Dual}
+    min_two_thirds::Union{Float64,ForwardDiff.Dual}
+    min_one::Union{Float64,ForwardDiff.Dual}
+    min_four_thirds::Union{Float64,ForwardDiff.Dual}
+    min_five_thirds::Union{Float64,ForwardDiff.Dual}
+    min_seven_thirds::Union{Float64,ForwardDiff.Dual} # added for PhenomD_TIGER
+    one::Union{Float64,ForwardDiff.Dual}
+    four_thirds::Union{Float64,ForwardDiff.Dual}
+    five_thirds::Union{Float64,ForwardDiff.Dual}
+    two::Union{Float64,ForwardDiff.Dual}
+end
 
 struct AcoeffsStructure
     two_thirds::Union{Float64,ForwardDiff.Dual}
@@ -636,7 +669,7 @@ end
 Returns the number of parameter of a struct<:Model as integer number. 
 """
 function _npar(model::PhenomD_TIGER)
-    return 13
+    return 12 #13  # ANDREA: I think this should be 12, not 13
 end
 
 """ 
@@ -652,12 +685,10 @@ function Phi(model::PhenomD_TIGER,
     fInsJoin_PHI = 0.018,
     fcutPar = 0.2,
     GMsun_over_c3 = uc.GMsun_over_c3,
-    container = nothing,
 )
 
     o1 = optional_param[1]
-    o2 = optional_param[2]
-    return Phi(model, f, mc, eta, chi1, chi2, o1, o2, fInsJoin_PHI=fInsJoin_PHI, fcutPar=fcutPar, GMsun_over_c3=GMsun_over_c3, container=container)
+    return Phi(model, f, mc, eta, chi1, chi2, o1, fInsJoin_PHI=fInsJoin_PHI, fcutPar=fcutPar, GMsun_over_c3=GMsun_over_c3)
 end
 
 """ 
@@ -675,11 +706,9 @@ function Ampl(model::PhenomD_TIGER,
     fInsJoin_Ampl = 0.014,
     GMsun_over_c3 = uc.GMsun_over_c3,
     GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc,
-    container = nothing,
 )
     o1 = optional_param[1]
-    o2 = optional_param[2]
-    return Ampl(model, f, mc, eta, chi1, chi2, dL, o1, o2, fcutPar = fcutPar, fInsJoin_Ampl = fInsJoin_Ampl, GMsun_over_c3 = GMsun_over_c3, GMsun_over_c2_Gpc = GMsun_over_c2_Gpc, container = container)
+    return Ampl(model, f, mc, eta, chi1, chi2, dL, o1, fcutPar = fcutPar, fInsJoin_Ampl = fInsJoin_Ampl, GMsun_over_c3 = GMsun_over_c3, GMsun_over_c2_Gpc = GMsun_over_c2_Gpc)
 end
 
 """

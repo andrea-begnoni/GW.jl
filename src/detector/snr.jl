@@ -9,7 +9,6 @@ SNR(model, detector, mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, Lamb
     #### Input arguments:
     -  `model` : structure, containing the waveform model
     -  `DetectorCoordinates` : structure, containing the coordinates of the detector
-    -  `f` : array, frequency of the GW signal, Hz
     -  `mc` : float, chirp mass, solar masses
     -  `eta` : float, symmetric mass ratio
     -  `chi1` : float, dimensionless spin component of the first BH
@@ -94,7 +93,7 @@ function SNR(model::Model,
            
             ampl_precomputation = PolAbs(
                 model,
-                f,
+                fgrid,
                 mc,
                 eta,
                 chi1,
