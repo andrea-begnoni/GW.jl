@@ -15,7 +15,7 @@ using Roots
 using LinearAlgebra
 
 
-export TaylorF2, PhenomD, PhenomD_NRTidal, PhenomHM, PhenomNSBH, PhenomXAS, PhenomXHM, PhenomD_TIGER
+export TaylorF2, PhenomD, PhenomD_NRTidal, PhenomHM, PhenomNSBH, PhenomXAS, PhenomXHM, PhenomD_TIGER, PhenomHM_TIGER
 export Model, GrModel, BgrModel
 export Ampl, Phi, PolAbs, Pol, _npar, _event_type, _available_waveforms, _fcut, _finalspin, _radiatednrg, _tau_star, _list_polarizations, hphc
 
@@ -158,6 +158,12 @@ struct PhenomD_TIGER <: BgrModel
     PhenomD_TIGER(PNorder::Float64) = new(PNorder, "BBH")
 end
 
+struct PhenomHM_TIGER <: BgrModel 
+    PNorder::Float64
+    event_type::String 
+    PhenomHM_TIGER(PNorder::Float64) = new(PNorder, "BBH")
+end
+
 """
 Returns the event_type of a struct<:Model as a string.
 """
@@ -166,7 +172,7 @@ function _event_type(model::Model)
 end
 
 function _available_waveforms()
-    return ["TaylorF2", "PhenomD", "PhenomHM", "PhenomD_NRTidal", "PhenomNSBH", "PhenomXAS", "PhenomXHM", "PhenomD_TIGER"]
+    return ["TaylorF2", "PhenomD", "PhenomHM", "PhenomD_NRTidal", "PhenomNSBH", "PhenomXAS", "PhenomXHM", "PhenomD_TIGER", "PhenomHM_TIGER"]
 end
 
 #@doc "Function to check the available waveforms and return the corresponding model."
@@ -189,8 +195,6 @@ function _available_waveforms(waveform::String)
         return PhenomXAS()
     elseif waveform == "PhenomXHM"
         return PhenomXHM()
-    elseif waveform == "PhenomD_TIGER"
-        return PhenomD_TIGER()
     else
         error("Waveform not available. Choose between: TaylorF2, PhenomD, PhenomHM, PhenomD_NRTidal, PhenomNSBH, PhenomXAS")
     end
@@ -211,6 +215,7 @@ include("ConnectionFunctionsXAS.jl") # This is needed for PhenomXHM
 
 #Beyond GR waveforms
 include("PhenomD_TIGER.jl")
+include("PhenomHM_TIGER.jl")
 
 ##############################################################################
 #   STRUCTURE USED IN THE MODULE
@@ -581,6 +586,33 @@ end
 function Ampl(model::PhenomHM, f, mc, eta, chi1, chi2, dL, Lambda1, Lambda2; clightGpc = uc.clightGpc, GMsun_over_c3 = uc.GMsun_over_c3)
     return Ampl(model, f, mc, dL, clightGpc = clightGpc, GMsun_over_c3 = GMsun_over_c3)
 end
+
+##############################################################################
+#
+#                              PhenomHM_TIGER
+#
+##############################################################################
+
+"""
+Returns the number of parameter of a struct<:Model as integer number. 
+"""
+function _npar(model::PhenomHM_TIGER)
+    return 12
+end
+
+function Phi(model::PhenomHM_TIGER, f, mc, eta, chi1, chi2, optional_param...; GMsun_over_c3 = uc.GMsun_over_c3)
+    o1 = optional_param[1]
+    return Phi(model, f, mc, eta, chi1, chi2, o1, GMsun_over_c3 = GMsun_over_c3)
+end
+
+function Ampl(model::PhenomHM_TIGER, f, mc, eta, chi1, chi2, dL, optional_param...; clightGpc = uc.clightGpc, GMsun_over_c3 = uc.GMsun_over_c3)
+    o1 = optional_param[1]
+    return Ampl(model, f, mc, chi1, chi2, o1, dL, clightGpc = clightGpc, GMsun_over_c3 = GMsun_over_c3)
+end
+
+function _list_polarizations(model::PhenomHM_TIGER) 
+    return ["plus", "cross"]
+ end
 
 ##############################################################################
 #
