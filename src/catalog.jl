@@ -811,20 +811,21 @@ function GenerateCatalog(nEvents::Int, population::String; time_delay_in_Myr = 1
         attributes(file)["local_rate"] = local_rate
         attributes(file)["date"] = date_format
 
-        write(file, "Lambda1", Lambda_1)
-        write(file, "Lambda2", Lambda_2)
-        write(file, "chi1", chiz1)  # chi1 = chi1z, since chi1x = chi1y = 0
-        write(file, "chi2", chiz2)  # chi2 = chi2z, since chi2x = chi2y = 0
+
         write(file, "mc", chirp_mass_detector_frame)
         write(file, "eta", eta)
+        write(file, "chi1", chiz1)  # chi1 = chi1z, since chi1x = chi1y = 0
+        write(file, "chi2", chiz2)  # chi2 = chi2z, since chi2x = chi2y = 0
         write(file, "dL", dL)
-        write(file, "z", z)
         write(file, "theta", theta)
         write(file, "phi", phi)
         write(file, "iota", iota)
         write(file, "psi", psi)
         write(file, "phiCoal", phiCoal)
         write(file, "tcoal", tcoal)
+        write(file, "Lambda1", Lambda_1)
+        write(file, "Lambda2", Lambda_2)
+        write(file, "z", z)
     end
 
     return chirp_mass_detector_frame,

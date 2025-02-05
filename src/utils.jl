@@ -80,9 +80,10 @@ Compute the covariance matrix of L"\tilde{Lambda}" and L"\delta\tilde{Lambda}" f
 -  Covariance matrix of L"\tilde{Lambda}" and L"\delta\tilde{Lambda}".
 
 """
-function CovMatrix_Lamt_delLam(Fisher, eta, Lambda1, Lambda2)
+function CovMatrix_Lamt_delLam(Cov, eta, Lambda1, Lambda2)
 
-    Cov_reduced = CovMatrix(Fisher, debug=false)[[2, 12, 13], [2, 12, 13]]
+    #Cov_reduced = CovMatrix(Fisher, debug=false)[[2, 12, 13], [2, 12, 13]]
+    Cov_reduced = Cov[[2, 12, 13], [2, 12, 13]]
     # jacobian
     J1 = ForwardDiff.gradient(x->Lamt_delLam_from_Lam12(x...)[1], [eta, Lambda1, Lambda2])
     J2 = ForwardDiff.gradient(x->Lamt_delLam_from_Lam12(x...)[2], [eta, Lambda1, Lambda2])

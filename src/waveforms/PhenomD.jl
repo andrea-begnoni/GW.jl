@@ -1146,3 +1146,50 @@ function Ampl(model::PhenomD,
     return ampl
 end
 
+# function hphc(model::PhenomD,
+#     f,
+#     mc,
+#     eta,
+#     chi1,
+#     chi2,
+#     dL,
+#     iota;
+#     fcutPar = 0.2,
+#     fInsJoin_Ampl = 0.014,
+#     fInsJoin_PHI = 0.018,
+#     GMsun_over_c3 = uc.GMsun_over_c3,
+#     GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc,
+#     container= nothing,
+#     call_number = 1,
+#     optimization = false
+# )
+
+#     phi = Phi(model, f, mc, eta, chi1, chi2, fcutPar = fcutPar, fInsJoin_PHI = fInsJoin_PHI, GMsun_over_c3 = GMsun_over_c3)
+#     amplitude = Ampl(model, f, mc, eta, chi1, chi2, dL, fcutPar = fcutPar, fInsJoin_Ampl = fInsJoin_Ampl, GMsun_over_c2_Gpc = GMsun_over_c2_Gpc, GMsun_over_c3 = GMsun_over_c3)
+
+#     hp = 0.5 * (1.0 + (cos(iota))^2) .* amplitude .* exp.(-1im * phi)
+#     hc = 1im * cos(iota) .* amplitude .* exp.(-1im * phi)
+    
+#     if typeof(eta) !== Float64 && !isnothing(container)
+
+#         for i in eachindex(f)
+#             container[i] = real(hp[i]).value + 1im * imag(hp[i]).value
+#             container[i + length(f)] = real(hc[i]).value + 1im * imag(hc[i]).value
+#         end    
+
+#     end
+
+#     if optimization == true
+
+#         if call_number == 1
+#             return [real(hp); imag(hp); real(hc); imag(hc)]
+#         else call_number == 2 || call_number == 3
+#             return [hp; hc]
+
+#         end
+#     else
+#         return hp, hc
+#     end
+
+#end
+

@@ -1467,7 +1467,7 @@ function SNR(model::Model,
     fgrid = 10 .^ (range(log10(fmin), log10(fcut), length = res))
 
     if precomputation == true 
-        if typeof(model) == PhenomHM || typeof(model) == PhenomXHM
+        if typeof(model) == PhenomHM || typeof(model) == PhenomXHM 
             if isnothing(ampl_precomputation)
                 ampl_precomputation = waveform.hphc(
                     model,
@@ -1727,6 +1727,8 @@ function FisherMatrix(model::Model,
     fmax=nothing,
     coordinate_shift = true,
     return_SNR = false,
+    optimization = false, # not supported for 1 detector
+    call_number = 1 # not supported for 1 detector
 )
     #function that is used only to divide between L and T detectors
 
@@ -1837,6 +1839,7 @@ function FisherMatrix_internal(model::Model,
     psdGrid = linear_interpolation(detector.fNoise, detector.psd, extrapolation_bc = 1.0)(fgrid)  
     
     # compute SNR and procede only if it is above the threshold
+    SNRval = nothing
     if rho_thres !==nothing
         SNRval = SNR(
             model,
@@ -1879,33 +1882,92 @@ function FisherMatrix_internal(model::Model,
     strainAutoDiff_imag = Matrix{Float64}(undef, res, nPar)
     
     event_parameter = [mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1, Lambda2]
-    event_parameter = event_parameter[1:nPar] # cut off non-required parameter,  
-    strainAutoDiff_real = ForwardDiff.jacobian(
-        x -> real(
-            Strain(
-                model,
-                detectorCoordinates,
-                fgrid,
-                x... ,
-                alpha = alpha,
-                useEarthMotion = useEarthMotion
+
+    if model == TaylorF2() && nPar == 12 && Lambda1 == 0. # if Lambda1 = 0. and Lambda2 != 0. we need to add a zero Lambda1
+
+        event_parameter_Taylor = [event_parameter[1:11]; Lambda2] # add zero Lambda1
+        strainAutoDiff_real = ForwardDiff.jacobian(
+            x -> real(
+                Strain(
+                    model,
+                    detectorCoordinates,
+                    fgrid,
+                    x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11], Lambda1, x[12], # Lambda1 is zero
+                    alpha = alpha,
+                    useEarthMotion = useEarthMotion
+                ),
             ),
-        ),
-        event_parameter,
-    )
-    strainAutoDiff_imag = ForwardDiff.jacobian(
-        x -> imag(
-            Strain(
-                model,
-                detectorCoordinates,
-                fgrid,
-                x... ,
-                alpha = alpha,
-                useEarthMotion = useEarthMotion,
+            event_parameter_Taylor,
+        )
+        strainAutoDiff_imag = ForwardDiff.jacobian(
+            x -> imag(
+                Strain(
+                    model,
+                    detectorCoordinates,
+                    fgrid,
+                    x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11], Lambda1, x[12], # Lambda1 is zero
+                    alpha = alpha,
+                    useEarthMotion = useEarthMotion
+                ),
             ),
-        ),
-        event_parameter,
-    )
+            event_parameter_Taylor,
+        )
+    else
+
+        event_parameter = event_parameter[1:nPar] # cut off non-required parameter,  
+        strainAutoDiff_real = ForwardDiff.jacobian(
+            x -> real(
+                Strain(
+                    model,
+                    detectorCoordinates,
+                    fgrid,
+                    x... ,
+                    alpha = alpha,
+                    useEarthMotion = useEarthMotion
+                ),
+            ),
+            event_parameter,
+        )
+        strainAutoDiff_imag = ForwardDiff.jacobian(
+            x -> imag(
+                Strain(
+                    model,
+                    detectorCoordinates,
+                    fgrid,
+                    x... ,
+                    alpha = alpha,
+                    useEarthMotion = useEarthMotion,
+                ),
+            ),
+            event_parameter,
+        )
+    end
+    # strainAutoDiff_real = ForwardDiff.jacobian(
+    #     x -> real(
+    #         Strain(
+    #             model,
+    #             detectorCoordinates,
+    #             fgrid,
+    #             x... ,
+    #             alpha = alpha,
+    #             useEarthMotion = useEarthMotion
+    #         ),
+    #     ),
+    #     event_parameter,
+    # )
+    # strainAutoDiff_imag = ForwardDiff.jacobian(
+    #     x -> imag(
+    #         Strain(
+    #             model,
+    #             detectorCoordinates,
+    #             fgrid,
+    #             x... ,
+    #             alpha = alpha,
+    #             useEarthMotion = useEarthMotion,
+    #         ),
+    #     ),
+    #     event_parameter,
+    # )
 
     # It can happen that a certain frequency gives a Nan value, in this case we set the derivative to zero,
     # this happens less than one time per event and usually at the end of the frequency grid.
@@ -2213,7 +2275,7 @@ function FisherMatrix(model::Model,
     fisherList = Vector{Matrix{Float64}}(undef, length(detector))
 
     
-    if optimization == true && (model == PhenomHM() || model == PhenomXHM())
+    if optimization == true && (model == PhenomHM() || model == PhenomXHM())# || model == PhenomD())
         if isnothing(fmax)
             fcut = waveform._fcut(model, mc, eta, Lambda1, Lambda2)
         else
@@ -2456,7 +2518,7 @@ function FisherMatrix_Tdetector(model::Model,
     waveform_jacobian = nothing, 
 )
 
-
+    SNR_val = nothing
     if rho_thres !==nothing
 
         if model == TaylorF2()
@@ -2532,47 +2594,7 @@ function FisherMatrix_Tdetector(model::Model,
     end
 
 
-    if optimization == false
-        parameters = [mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1, Lambda2]
-        F1 = FisherMatrix_internal(
-            model,
-            ET1,
-            parameters...,
-            res = res,
-            useEarthMotion = useEarthMotion,
-            rho_thres = nothing,
-            alpha = 0.0,
-            fmin=fmin,
-            fmax=fmax,
-            return_SNR=false,
-        )
-        F2 = FisherMatrix_internal(
-            model,
-            ET2,
-            parameters...,
-            res = res,
-            useEarthMotion = useEarthMotion,
-            rho_thres = nothing,
-            alpha = 60.0,
-            fmin=fmin,
-            fmax=fmax,
-            return_SNR=false,
-        )
-        F3 = FisherMatrix_internal(
-            model,
-            ET3,
-            parameters...,
-            res = res,
-            useEarthMotion = useEarthMotion,
-            rho_thres = nothing,
-            alpha = 120.0,
-            fmin=fmin,
-            fmax=fmax,
-            return_SNR=false,
-
-        )
-    else # optimization == true
-
+    if optimization == true && (model == PhenomHM() || model == PhenomXHM())
         if isnothing(fmax)
             fcut = waveform._fcut(model, mc, eta, Lambda1, Lambda2)
         else
@@ -2612,6 +2634,47 @@ function FisherMatrix_Tdetector(model::Model,
             parameters...,
             alpha = 120.0,
             useEarthMotion = useEarthMotion,
+        )
+
+    else # optimization == false
+
+        parameters = [mc, eta, chi1, chi2, dL, theta, phi, iota, psi, tcoal, phiCoal, Lambda1, Lambda2]
+        F1 = FisherMatrix_internal(
+            model,
+            ET1,
+            parameters...,
+            res = res,
+            useEarthMotion = useEarthMotion,
+            rho_thres = nothing,
+            alpha = 0.0,
+            fmin=fmin,
+            fmax=fmax,
+            return_SNR=false,
+        )
+        F2 = FisherMatrix_internal(
+            model,
+            ET2,
+            parameters...,
+            res = res,
+            useEarthMotion = useEarthMotion,
+            rho_thres = nothing,
+            alpha = 60.0,
+            fmin=fmin,
+            fmax=fmax,
+            return_SNR=false,
+        )
+        F3 = FisherMatrix_internal(
+            model,
+            ET3,
+            parameters...,
+            res = res,
+            useEarthMotion = useEarthMotion,
+            rho_thres = nothing,
+            alpha = 120.0,
+            fmin=fmin,
+            fmax=fmax,
+            return_SNR=false,
+
         )
     end
     if return_SNR == true
