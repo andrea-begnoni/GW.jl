@@ -17,7 +17,7 @@ Note that power spectral densities are the square of the amplitude spectral dens
 The files can have 2 or 4 columns, the first one is always the freuencies and the last one is always the full PSD. In the case there are 4 columns there are the PSD for high and low frequncies (HF and LF). 
 To select different columns from the function _readPSD(..., cols = [1,4]) where the first index is the frequency and the second one is the PSD.
 
-Inside this folder there are the Power Spectral Densities (or ASD) divided in 3 sub-folder:
+Inside this folder there are the Power Spectral Densities (or ASD) divided in 5 sub-folder:
 - curves\_Jan\_2020
 - ET\_curves
 - CE\_curves
@@ -44,7 +44,7 @@ The folder contains ASDs for:
 * the 40 km detector tuned for low-freqency signals (```cosmic_explorer_40km_lf```)
 
 
-#### LVC_O1O2O3/
+#### LVK_O1O2O3/
 
 The folder contains ASDs for the LIGO and Virgo detectors during their O1, O2 and O3 observing runs, extracted in specific moment from actual data.
 

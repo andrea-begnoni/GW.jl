@@ -662,8 +662,8 @@ function GenerateCatalog(nEvents::Int, population::String; time_delay_in_Myr = 1
         chiz1 = rand(Uniform(-0.05, 0.05), n_samples)
         chiz2 = rand(Uniform(-0.05, 0.05), n_samples)
 
-        m_1 = rand(Uniform(1, 2.5), n_samples)
-        m_2 = rand(Uniform(1, 2.5), n_samples)
+        m_1 = rand(Uniform(1, 2.15), n_samples)
+        m_2 = rand(Uniform(1, 2.15), n_samples)
         if m_1 < m_2
             tmp = m_1
             m_1 = m_2

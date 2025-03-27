@@ -3,6 +3,7 @@ module UtilsAndConstants    # this is the name of the module
 using ForwardDiff # these are the Julia packages that are used in this module
 using LinearAlgebra
 using LaTeXStrings
+using Base.Threads
 
 
 export GMsun_over_c3, GMsun_over_c2, uGpc, GMsun_over_c2_Gpc, REarth_km, clight_kms, clightGpc, Lamt_delLam_from_Lam12,
@@ -323,7 +324,7 @@ function CovMatrix(Fisher::Array{Float64, 3}; threshold = 5e-2, force_high_preci
     n = size(Fisher)[1]
     failed_inv = 0
 
-    for i in 1:n
+    @threads for i in 1:n
         idx=0
         covMatrix[i,:,:], idx= CovMatrix(Fisher[i,:,:], debug = debug, threshold = threshold, called_by_3D_function = true, force_high_precision = force_high_precision)
         failed_inv += Int(idx/3)
@@ -357,7 +358,7 @@ function Errors(covMatrix::Array{Float64, 3})
     nPar = size(covMatrix)[2]
     errors = zeros(nCov, nPar)
 
-    for ii in 1:nCov
+    @threads for ii in 1:nCov
         errors[ii,:] = sqrt.(diag(covMatrix[ii,:,:]))
     end
 
@@ -399,7 +400,7 @@ function SkyArea(covMatrix::Array{Float64,3}, thetaCatalog::Array; percent_level
     nCov = size(covMatrix)[1]
     skyArea = zeros(nCov)
 
-    for ii in 1:nCov
+    @threads for ii in 1:nCov
         skyArea[ii] = SkyArea(covMatrix[ii,:,:], thetaCatalog[ii], percent_level=percent_level)
     end
 
