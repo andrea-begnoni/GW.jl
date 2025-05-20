@@ -15,7 +15,7 @@ using Roots
 using LinearAlgebra
 
 
-export TaylorF2, PhenomD, PhenomD_NRTidal, PhenomHM, PhenomNSBH, PhenomXAS, PhenomXHM, PhenomD_TIGER, PhenomHM_TIGER
+export TaylorF2, PhenomD, PhenomD_NRTidal, PhenomHM, PhenomNSBH, PhenomXAS, PhenomXHM, PhenomD_TIGER, PhenomHM_TIGER, PhenomD_TIGER_spinless, PhenomHM_TIGER_spinless
 export Model, GrModel, BgrModel
 export Ampl, Phi, PolAbs, Pol, _npar, _event_type, _available_waveforms, _fcut, _finalspin, _radiatednrg, _tau_star, _list_polarizations, hphc
 
@@ -164,6 +164,16 @@ struct PhenomHM_TIGER <: BgrModel
     PhenomHM_TIGER(PNorder::Float64) = new(PNorder, "BBH")
 end
 
+struct PhenomD_TIGER_spinless <: BgrModel 
+    event_type::String 
+    PhenomD_TIGER_spinless(PNorder::Float64) = new(PNorder, "BBH")
+end
+
+struct PhenomHM_TIGER_spinless <: BgrModel 
+    event_type::String 
+    PhenomHM_TIGER_spinless(PNorder::Float64) = new(PNorder, "BBH")
+end
+
 """
 Returns the event_type of a struct<:Model as a string.
 """
@@ -172,7 +182,7 @@ function _event_type(model::Model)
 end
 
 function _available_waveforms()
-    return ["TaylorF2", "PhenomD", "PhenomHM", "PhenomD_NRTidal", "PhenomNSBH", "PhenomXAS", "PhenomXHM", "PhenomD_TIGER", "PhenomHM_TIGER"]
+    return ["TaylorF2", "PhenomD", "PhenomHM", "PhenomD_NRTidal", "PhenomNSBH", "PhenomXAS", "PhenomXHM", "PhenomD_TIGER", "PhenomHM_TIGER", "PhenomD_TIGER_spinless", "PhenomHM_TIGER_spinless"]
 end
 
 #@doc "Function to check the available waveforms and return the corresponding model."
@@ -216,6 +226,8 @@ include("ConnectionFunctionsXAS.jl") # This is needed for PhenomXHM
 #Beyond GR waveforms
 include("PhenomD_TIGER.jl")
 include("PhenomHM_TIGER.jl")
+include("PhenomD_TIGER_spinless.jl")
+include("PhenomHM_TIGER_spinless.jl")
 
 ##############################################################################
 #   STRUCTURE USED IN THE MODULE
@@ -614,6 +626,34 @@ function _list_polarizations(model::PhenomHM_TIGER)
     return ["plus", "cross"]
  end
 
+
+##############################################################################
+#
+#                              PhenomHM_TIGER_spinless
+#
+##############################################################################
+
+"""
+Returns the number of parameter of a struct<:Model as integer number. 
+"""
+function _npar(model::PhenomHM_TIGER_spinless)
+    return 12
+end
+
+function Phi(model::PhenomHM_TIGER_spinless, f, mc, eta, chi1, chi2, optional_param...; GMsun_over_c3 = uc.GMsun_over_c3)
+    o1 = optional_param[1]
+    return Phi(model, f, mc, eta, chi1, chi2, o1, GMsun_over_c3 = GMsun_over_c3)
+end
+
+function Ampl(model::PhenomHM_TIGER_spinless, f, mc, eta, chi1, chi2, dL, optional_param...; clightGpc = uc.clightGpc, GMsun_over_c3 = uc.GMsun_over_c3)
+    o1 = optional_param[1]
+    return Ampl(model, f, mc, chi1, chi2, o1, dL, clightGpc = clightGpc, GMsun_over_c3 = GMsun_over_c3)
+end
+
+function _list_polarizations(model::PhenomHM_TIGER_spinless) 
+    return ["plus", "cross"]
+ end
+
 ##############################################################################
 #
 #                              PhenomXAS
@@ -690,6 +730,67 @@ end
 function Ampl(model::PhenomXHM, f, mc, eta, chi1, chi2, dL, Lambda1, Lambda2; clightGpc = uc.clightGpc, GMsun_over_c3 = uc.GMsun_over_c3)
     return Ampl(model, f, mc, dL, clightGpc = clightGpc, GMsun_over_c3 = GMsun_over_c3)
 end
+
+
+##############################################################################
+#
+#                              PhenomD_TIGER_spinless
+#
+##############################################################################
+
+"""
+Returns the number of parameter of a struct<:Model as integer number. 
+"""
+function _npar(model::PhenomD_TIGER_spinless)
+    return 12 #13  # ANDREA: I think this should be 12, not 13
+end
+
+""" 
+helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
+"""
+function Phi(model::PhenomD_TIGER_spinless,
+    f,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    optional_param... ;
+    fInsJoin_PHI = 0.018,
+    fcutPar = 0.2,
+    GMsun_over_c3 = uc.GMsun_over_c3,
+)
+
+    o1 = optional_param[1]
+    return Phi(model, f, mc, eta, chi1, chi2, o1, fInsJoin_PHI=fInsJoin_PHI, fcutPar=fcutPar, GMsun_over_c3=GMsun_over_c3)
+end
+
+""" 
+helper function to do function overloading (i.e., to have different functions with the same name but different input arguments) 
+"""
+function Ampl(model::PhenomD_TIGER_spinless,
+    f,
+    mc,
+    eta,
+    chi1,
+    chi2,
+    dL,
+    optional_param... ;
+    fcutPar = 0.2,
+    fInsJoin_Ampl = 0.014,
+    GMsun_over_c3 = uc.GMsun_over_c3,
+    GMsun_over_c2_Gpc = uc.GMsun_over_c2_Gpc,
+)
+    o1 = optional_param[1]
+    return Ampl(model, f, mc, eta, chi1, chi2, dL, o1, fcutPar = fcutPar, fInsJoin_Ampl = fInsJoin_Ampl, GMsun_over_c3 = GMsun_over_c3, GMsun_over_c2_Gpc = GMsun_over_c2_Gpc)
+end
+
+"""
+Returns polarizations of the PhenomD_TIGER_spinless waveform
+"""
+function _list_polarizations(model::PhenomD_TIGER_spinless) 
+    return ["plus", "cross"]
+ end
+
 
 ##############################################################################
 #
