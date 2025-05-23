@@ -2215,78 +2215,7 @@ end
 #     return @. pi * sqrt(eta * 2.0 / 3.0) .* (v .^ (-3.5)) * abs.(Hlm)
 # end
 
-"""
-useful functions for hphc()
-"""
-function _completePhase_BGR(
-    infreqs,
-    C1MRDuse,
-    C2MRDuse,
-    RhoUse,
-    TauUse,
-    C1Int,
-    C2Int,
-    PhiInspcoeffs,
-    fInsJoin_PHI,
-    alpha1,
-    alpha2,
-    alpha3,
-    alpha4,
-    alpha5,
-    beta1,
-    beta2,
-    beta3,
-    etaInv,
-    fMRDJoinPh,
-    fcutPar,
-    fring,
-    fdamp,
-)
-    return @. ifelse(
-        infreqs < fInsJoin_PHI,
-        PhiInspcoeffs.initial_phasing +
-        PhiInspcoeffs.two_thirds * (infreqs^(2.0 / 3.0)) +
-        PhiInspcoeffs.third * (infreqs^(1.0 / 3.0)) +
-        PhiInspcoeffs.third_log * (infreqs^(1.0 / 3.0)) * log(pi * infreqs) / 3.0 +
-        PhiInspcoeffs.log * log(pi * infreqs) / 3.0 +
-        PhiInspcoeffs.min_third * (infreqs^(-1.0 / 3.0)) +
-        PhiInspcoeffs.min_two_thirds * (infreqs^(-2.0 / 3.0)) +
-        PhiInspcoeffs.min_one / infreqs +
-        PhiInspcoeffs.min_four_thirds * (infreqs^(-4.0 / 3.0)) +
-        PhiInspcoeffs.min_five_thirds * (infreqs^(-5.0 / 3.0)) +
-        PhiInspcoeffs.min_seven_thirds * (infreqs^(-7. /3.)) +
-        (
-            PhiInspcoeffs.one * infreqs +
-            PhiInspcoeffs.four_thirds * (infreqs^(4.0 / 3.0)) +
-            PhiInspcoeffs.five_thirds * (infreqs^(5.0 / 3.0)) +
-            PhiInspcoeffs.two * infreqs * infreqs
-        ) * etaInv,
-        ifelse(
-            infreqs < fMRDJoinPh,
-            (beta1 * infreqs - beta3 / (3.0 * infreqs^3) + beta2 * log(infreqs)) * etaInv +
-            C1Int +
-            C2Int * infreqs,
-            ifelse(
-                infreqs < fcutPar,
-                (
-                    -(alpha2 / infreqs) +
-                    (4.0 / 3.0) * (alpha3 * (infreqs^(3.0 / 4.0))) +
-                    alpha1 * infreqs +
-                    alpha4 *
-                    RhoUse *
-                    atan((infreqs - alpha5 * fring) / (fdamp * RhoUse * TauUse))
-                ) * etaInv +
-                C1MRDuse +
-                C2MRDuse * infreqs,
-                0.0,
-            ),
-        ),
-    )
-end
 
-"""
-useful functions for hphc()
-"""
 # function _onePointFiveSpinPN_hphc(infreqs, chi_s, chi_a, modes, mms, eta, Seta) #this one is different from the one in Ampl since it computes ones for all the multipoles, to distinguish look at the number of inputs
 #     # PN amplitudes function, needed to scale
 
