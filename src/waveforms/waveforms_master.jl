@@ -165,11 +165,13 @@ struct PhenomHM_TIGER <: BgrModel
 end
 
 struct PhenomD_TIGER_spinless <: BgrModel 
+    PNorder::Float64
     event_type::String 
     PhenomD_TIGER_spinless(PNorder::Float64) = new(PNorder, "BBH")
 end
 
 struct PhenomHM_TIGER_spinless <: BgrModel 
+    PNorder::Float64
     event_type::String 
     PhenomHM_TIGER_spinless(PNorder::Float64) = new(PNorder, "BBH")
 end
