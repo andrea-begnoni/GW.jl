@@ -1279,7 +1279,7 @@ function SNR(model::Model,
     Lambda1=0.0,
     Lambda2=0.0;
     fmin=2.0,
-    fmax = nothing,
+    fmax::Union{Nothing, Float64}=nothing,
     res = 1000,
     useEarthMotion = false,
     ampl_precomputation = nothing,
@@ -1447,7 +1447,7 @@ function SNR(model::Model,
     Lambda1 = 0.0,
     Lambda2 = 0.0;
     fmin=2.0,
-    fmax = nothing,
+    fmax::Union{Nothing, Float64} = nothing,
     res = 1000,
     useEarthMotion = false,
     precomputation = true,
@@ -1549,8 +1549,8 @@ function SNR(model::Model,
     tcoal::AbstractArray,
     Lambda1=0.0,
     Lambda2=0.0;
-    fmin=2.0,
-    fmax = nothing,
+    fmin::Union{Float64, AbstractArray}=2.0,
+    fmax::Union{Nothing, Float64, AbstractArray} = nothing,
     res = 1000,
     auto_save = false,
     name_folder = "BBH",
@@ -1560,6 +1560,14 @@ function SNR(model::Model,
 )
     nEvents = length(mc)
     SNRs = Vector{Float64}(undef, nEvents)
+
+    if(fmin isa AbstractArray && length(fmin) != nEvents)
+        throw(ArgumentError("fmin must be an array of the same length as the number of events (or otherwise a single scalar Float64)"))
+    end
+
+    if(fmax isa AbstractArray && length(fmax) != nEvents)
+        throw(ArgumentError("fmax must be an array of the same length as the number of events (or otherwise a single scalar Float64 or Nothing)"))
+    end
 
     if typeof(model) == PhenomD || typeof(model) == PhenomHM || typeof(model) == PhenomXAS || typeof(model) == PhenomXHM
         Lambda1 = zeros(nEvents)
@@ -1602,8 +1610,8 @@ function SNR(model::Model,
                         tcoal[ii],
                         Lambda1[ii],
                         Lambda2[ii], 
-                        fmin=fmin, 
-                        fmax=fmax, 
+                        fmin= (fmin isa AbstractArray ? fmin[ii] : fmin), 
+                        fmax= (fmax isa AbstractArray ? fmax[ii] : fmax), 
                         res = res, 
                         useEarthMotion = useEarthMotion,
                         precomputation = precomputation)
@@ -1723,7 +1731,7 @@ function FisherMatrix(model::Model,
     alpha = 0.0,
     rho_thres = 12.,
     fmin=2.,
-    fmax=nothing,
+    fmax::Union{Nothing, Float64}=nothing,
     coordinate_shift = true,
     return_SNR = false,
     optimization = false, # not supported for 1 detector
@@ -1816,7 +1824,7 @@ function FisherMatrix_internal(model::Model,
     alpha = 0.0,
     rho_thres = 12.,
     fmin=2.,
-    fmax=nothing,
+    fmax::Union{Nothing, Float64}=nothing,
     return_SNR = false,
 )
 
@@ -2218,7 +2226,7 @@ function FisherMatrix(model::Model,
     rho_thres=12.,
     alpha = 0.0,
     fmin=2.0,
-    fmax = nothing,
+    fmax::Union{Nothing, Float64} = nothing,
     coordinate_shift = true,
     return_SNR = false,
     optimization = true,
@@ -2508,7 +2516,7 @@ function FisherMatrix_Tdetector(model::Model,
     rho_thres=12.,
     alpha = 0.0,
     fmin=2.0,
-    fmax = nothing,
+    fmax::Union{Nothing, Float64} = nothing,
     REarth_km = uc.REarth_km,
     coordinate_shift = true,
     return_SNR = false, 
@@ -2744,8 +2752,8 @@ function FisherMatrix(model::Model,
     phiCoal::AbstractArray,
     Lambda1=nothing,
     Lambda2=nothing;
-    fmin=2.0,
-    fmax = nothing,
+    fmin::Union{Float64, AbstractArray}=2.0,
+    fmax::Union{Nothing, Float64, AbstractArray} = nothing,
     res = 1000,
     useEarthMotion = false,
     rho_thres=12.,
@@ -2759,6 +2767,14 @@ function FisherMatrix(model::Model,
     call_number = 1,
 )
     nEvents = length(mc)    
+
+    if(fmin isa AbstractArray && length(fmin) != nEvents)
+        throw(ArgumentError("fmin must be an array of the same length as the number of events (or otherwise a single scalar Float64)"))
+    end
+
+    if(fmax isa AbstractArray && length(fmax) != nEvents)
+        throw(ArgumentError("fmax must be an array of the same length as the number of events (or otherwise a single scalar Float64 or Nothing)"))
+    end
 
     if name_folder === nothing
         name_folder = _event_type(model) 
@@ -2804,8 +2820,8 @@ function FisherMatrix(model::Model,
                 phiCoal[ii], 
                 Lambda1[ii], 
                 Lambda2[ii], 
-                fmin=fmin, 
-                fmax=fmax, 
+                fmin= (fmin isa AbstractArray ? fmin[ii] : fmin), 
+                fmax= (fmax isa AbstractArray ? fmax[ii] : fmax), 
                 res = res, 
                 useEarthMotion = useEarthMotion, 
                 rho_thres=rho_thres, 
@@ -2860,6 +2876,7 @@ function FisherMatrix(model::Model,
                     write(file, "tcoal", tcoal)
                     write(file, "Lambda1", Lambda1)
                     write(file, "Lambda2", Lambda2)
+                    # It would be nice to save fmin and fmax as well
                 end
             end
         end
@@ -2882,8 +2899,8 @@ function FisherMatrix(model::Model,
                         phiCoal[ii],
                         Lambda1[ii],
                         Lambda2[ii],
-                        fmin=fmin, 
-                        fmax=fmax, 
+                        fmin= (fmin isa AbstractArray ? fmin[ii] : fmin), 
+                        fmax= (fmax isa AbstractArray ? fmax[ii] : fmax), 
                         res = res, 
                         useEarthMotion = useEarthMotion, 
                         rho_thres=rho_thres, 
@@ -2933,6 +2950,7 @@ function FisherMatrix(model::Model,
                     write(file, "tcoal", tcoal)
                     write(file, "Lambda1", Lambda1)
                     write(file, "Lambda2", Lambda2)
+                    # It would be nice to save fmin and fmax as well
                 end
             end
         end
@@ -2992,3 +3010,4 @@ end
 
 
 end# of module
+
