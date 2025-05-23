@@ -58,13 +58,13 @@ function FisherMatrix(model::Model,
     phiCoal::Float64,
     optional_param...;
     res = 1000,
-    useEarthMotion = false,
+    useEarthMotion::Bool = false,
     alpha = 0.0,
-    rho_thres = 12.,
-    fmin=2.,
-    fmax=nothing,
-    coordinate_shift = true,
-    return_SNR = false,
+    rho_thres::Union{Nothing, Float64} = 12.,
+    fmin::Float64=2.,
+    fmax::Union{Nothing, Float64}=nothing,
+    coordinate_shift::Bool = true,
+    return_SNR::Bool = false,
 )
     #function that is used only to divide between L and T detectors
 
@@ -146,12 +146,12 @@ function FisherMatrix_internal(model::Model,
     phiCoal::Float64,
     optional_param...;
     res = 1000,
-    useEarthMotion = false,
+    useEarthMotion::Bool = false,
     alpha = 0.0,
-    rho_thres = 12.,
-    fmin=2.,
-    fmax=nothing,
-    return_SNR = false,
+    rho_thres::Union{Nothing, Float64} = 12.,
+    fmin::Float64=2.,
+    fmax::Union{Nothing, Float64}=nothing,
+    return_SNR::Bool = false,
 )
 
     #Define/extract tidal diformabilites
@@ -313,13 +313,13 @@ function FisherMatrix(model::Model,
     phiCoal::Float64,
     optional_param...;
     res = 1000,
-    useEarthMotion = false,
-    rho_thres=12.,
+    useEarthMotion::Bool = false,
+    rho_thres::Union{Nothing, Float64}=12.,
     alpha = 0.0,
-    fmin=2.0,
-    fmax = nothing,
-    coordinate_shift = true,
-    return_SNR = false,
+    fmin::Float64=2.0,
+    fmax::Union{Nothing, Float64} = nothing,
+    coordinate_shift::Bool = true,
+    return_SNR::Bool = false,
 )
 
     #Define/extract tidal diformabilites
@@ -456,14 +456,14 @@ function FisherMatrix_Tdetector(model::Model,
     phiCoal::Float64,
     optional_param...;
     res = 1000,
-    useEarthMotion = false,
-    rho_thres=12.,
+    useEarthMotion::Bool = false,
+    rho_thres::Union{Nothing, Float64}=12.,
     alpha = 0.0,
-    fmin=2.0,
-    fmax = nothing,
+    fmin::Float64=2.0,
+    fmax::Union{Nothing, Float64} = nothing,
     REarth_km = uc.REarth_km,
-    coordinate_shift = true,
-    return_SNR = false,    
+    coordinate_shift::Bool = true,
+    return_SNR::Bool = false, 
 )
 
     if rho_thres !== nothing
@@ -688,19 +688,27 @@ function FisherMatrix(model::Model,
     tcoal::AbstractArray,
     phiCoal::AbstractArray,
     optional_param...;
-    fmin=2.0,
-    fmax = nothing,
+    fmin::Union{Float64, AbstractArray}=2.0,
+    fmax::Union{Nothing, Float64, AbstractArray} = nothing,
     res = 1000,
-    useEarthMotion = false,
-    rho_thres=12.,
+    useEarthMotion::Bool = false,
+    rho_thres::Union{Nothing, Float64} =12.,
     alpha = 0.0,
-    coordinate_shift = true,
-    return_SNR = false,
-    auto_save =false,
+    coordinate_shift::Bool = true,
+    return_SNR::Bool = false,
+    auto_save::Bool =false,
     name_folder = nothing,
-    save_catalog = false,
+    save_catalog::Bool = false,
 )
     nEvents = length(mc)    
+
+    if(fmin isa AbstractArray && length(fmin) != nEvents)
+        throw(ArgumentError("fmin must be an array of the same length as the number of events (or otherwise a single scalar Float64)"))
+    end
+
+    if(fmax isa AbstractArray && length(fmax) != nEvents)
+        throw(ArgumentError("fmax must be an array of the same length as the number of events (or otherwise a single scalar Float64 or Nothing)"))
+    end
 
     #Define/extract tidal diformabilites
     if _event_type(model::Model) == "BBH"
@@ -758,8 +766,8 @@ function FisherMatrix(model::Model,
                 tcoal[ii], 
                 phiCoal[ii], 
                 optional_param_reshaped[ii]..., 
-                fmin=fmin, 
-                fmax=fmax, 
+                fmin= (fmin isa AbstractArray ? fmin[ii] : fmin), 
+                fmax= (fmax isa AbstractArray ? fmax[ii] : fmax), 
                 res = res, 
                 useEarthMotion = useEarthMotion, 
                 rho_thres=rho_thres, 
@@ -813,6 +821,7 @@ function FisherMatrix(model::Model,
                     # Lambda is well defined, see above
                     write(file, "Lambda1", Lambda1)
                     write(file, "Lambda2", Lambda2)
+                    # It would be nice to save fmin and fmax as well
                 end
             end
         end
@@ -835,8 +844,8 @@ function FisherMatrix(model::Model,
                         tcoal[ii], 
                         phiCoal[ii],
                         optional_param_reshaped[ii]...,
-                        fmin=fmin, 
-                        fmax=fmax, 
+                        fmin= (fmin isa AbstractArray ? fmin[ii] : fmin), 
+                        fmax= (fmax isa AbstractArray ? fmax[ii] : fmax), 
                         res = res, 
                         useEarthMotion = useEarthMotion, 
                         rho_thres=rho_thres, 
@@ -884,6 +893,7 @@ function FisherMatrix(model::Model,
                     # Lambda is well defined, see above.
                     write(file, "Lambda1", Lambda1)
                     write(file, "Lambda2", Lambda2)
+                    # It would be nice to save fmin and fmax as well
                 end
             end
         end
@@ -911,7 +921,7 @@ This function reads the Fisher matrices and/or the SNRs
     ```
 
 """
-function _read_Fishers_SNRs(path; SNR=true)
+function _read_Fishers_SNRs(path; SNR::Bool=true)
     if SNR == true
         Fishers, SNRs = h5open(path, "r") do file
             println("Attributes: ", keys(attributes(file)))
@@ -937,5 +947,4 @@ function _read_Fishers_SNRs(path; SNR=true)
         end
     end
 end
-
 

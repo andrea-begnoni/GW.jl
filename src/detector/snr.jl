@@ -50,10 +50,10 @@ function SNR(model::Model,
     psi::Float64,
     tcoal::Float64,
     optional_param...;
-    fmin=2.0,
-    fmax = nothing,
+    fmin::Float64=2.0,
+    fmax::Union{Nothing, Float64}=nothing,
     res = 1000,
-    useEarthMotion = false,
+    useEarthMotion::Bool = false,
     ampl_precomputation = nothing,
 )
 
@@ -200,11 +200,11 @@ function SNR(model::Model,
     psi::Float64,
     tcoal::Float64,
     optional_param...;
-    fmin=2.0,
-    fmax = nothing,
+    fmin::Float64=2.0,
+    fmax::Union{Nothing, Float64} = nothing,
     res = 1000,
-    useEarthMotion = false,
-    precomputation = true,
+    useEarthMotion::Bool = false,
+    precomputation::Bool = true,
 )
 ##########################
 ## This part is to precompute the amplitude of the waveform which is the longest part of the computation
@@ -299,17 +299,25 @@ function SNR(model::Model,
     psi::AbstractArray,
     tcoal::AbstractArray,
     optional_param...;
-    fmin=2.0,
-    fmax = nothing,
+    fmin::Union{Float64, AbstractArray}=2.0,
+    fmax::Union{Nothing, Float64, AbstractArray} = nothing,
     res = 1000,
-    auto_save = false,
+    auto_save::Bool = false,
     name_folder = "BBH",
-    save_catalog = false,
-    useEarthMotion = false,
-    precomputation = true,
+    save_catalog::Bool = false,
+    useEarthMotion::Bool = false,
+    precomputation::Bool = true,
 )
     nEvents = length(mc)
     SNRs = Vector{Float64}(undef, nEvents)
+
+    if(fmin isa AbstractArray && length(fmin) != nEvents)
+        throw(ArgumentError("fmin must be an array of the same length as the number of events (or otherwise a single scalar Float64)"))
+    end
+
+    if(fmax isa AbstractArray && length(fmax) != nEvents)
+        throw(ArgumentError("fmax must be an array of the same length as the number of events (or otherwise a single scalar Float64 or Nothing)"))
+    end
 
     #check correct length of optional_parameters
     for op in optional_param
@@ -359,8 +367,8 @@ function SNR(model::Model,
             psi[ii], 
             tcoal[ii],
             optional_param_ii..., 
-            fmin=fmin, 
-            fmax=fmax, 
+            fmin= (fmin isa AbstractArray ? fmin[ii] : fmin), 
+            fmax= (fmax isa AbstractArray ? fmax[ii] : fmax), 
             res = res, 
             useEarthMotion = useEarthMotion,
             precomputation = precomputation)
@@ -411,6 +419,7 @@ function SNR(model::Model,
                 # See above
                 write(file, "Lambda1", Lambda1)
                 write(file, "Lambda2", Lambda2)
+                # It would be nice to save fmin and fmax as well
             end
         end
     end
