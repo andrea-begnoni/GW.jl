@@ -1278,10 +1278,10 @@ function SNR(model::Model,
     tcoal::Float64,
     Lambda1=0.0,
     Lambda2=0.0;
-    fmin=2.0,
+    fmin::Float64=2.0,
     fmax::Union{Nothing, Float64}=nothing,
     res = 1000,
-    useEarthMotion = false,
+    useEarthMotion::Bool = false,
     ampl_precomputation = nothing,
 )
 
@@ -1446,11 +1446,11 @@ function SNR(model::Model,
     tcoal::Float64,
     Lambda1 = 0.0,
     Lambda2 = 0.0;
-    fmin=2.0,
+    fmin::Float64=2.0,
     fmax::Union{Nothing, Float64} = nothing,
     res = 1000,
-    useEarthMotion = false,
-    precomputation = true,
+    useEarthMotion::Bool = false,
+    precomputation::Bool = true,
     ampl_precomputation = nothing
 )
 ##########################
@@ -1552,11 +1552,11 @@ function SNR(model::Model,
     fmin::Union{Float64, AbstractArray}=2.0,
     fmax::Union{Nothing, Float64, AbstractArray} = nothing,
     res = 1000,
-    auto_save = false,
+    auto_save::Bool = false,
     name_folder = "BBH",
-    save_catalog = false,
-    useEarthMotion = false,
-    precomputation = true,
+    save_catalog::Bool = false,
+    useEarthMotion::Bool = false,
+    precomputation::Bool = true,
 )
     nEvents = length(mc)
     SNRs = Vector{Float64}(undef, nEvents)
@@ -1727,14 +1727,14 @@ function FisherMatrix(model::Model,
     Lambda1=0.,
     Lambda2=0.;
     res = 1000,
-    useEarthMotion = false,
+    useEarthMotion::Bool = false,
     alpha = 0.0,
-    rho_thres = 12.,
-    fmin=2.,
+    rho_thres::Union{Nothing, Float64} = 12.,
+    fmin::Float64=2.,
     fmax::Union{Nothing, Float64}=nothing,
-    coordinate_shift = true,
-    return_SNR = false,
-    optimization = false, # not supported for 1 detector
+    coordinate_shift::Bool = true,
+    return_SNR::Bool = false,
+    optimization::Bool = false, # not supported for 1 detector
     call_number = 1 # not supported for 1 detector
 )
     #function that is used only to divide between L and T detectors
@@ -1820,12 +1820,12 @@ function FisherMatrix_internal(model::Model,
     Lambda1=0.,
     Lambda2=0.;
     res = 1000,
-    useEarthMotion = false,
+    useEarthMotion::Bool = false,
     alpha = 0.0,
-    rho_thres = 12.,
-    fmin=2.,
+    rho_thres::Union{Nothing, Float64} = 12.,
+    fmin::Float64=2.,
     fmax::Union{Nothing, Float64}=nothing,
-    return_SNR = false,
+    return_SNR::Bool = false,
 )
 
     if model == TaylorF2()
@@ -2111,7 +2111,7 @@ function FisherMatrix_internal(model::Model,
     tcoal::Float64,
     phiCoal::Float64;
     alpha = 0.0,
-    useEarthMotion = false,
+    useEarthMotion::Bool = false,
 )
     psdGrid = linear_interpolation(detector.fNoise, detector.psd, extrapolation_bc = 1.0)(fgrid)  
 
@@ -2222,14 +2222,14 @@ function FisherMatrix(model::Model,
     Lambda1=0.,
     Lambda2=0.;
     res = 1000,
-    useEarthMotion = false,
-    rho_thres=12.,
+    useEarthMotion::Bool = false,
+    rho_thres::Union{Nothing, Float64}=12.,
     alpha = 0.0,
-    fmin=2.0,
+    fmin::Float64=2.0,
     fmax::Union{Nothing, Float64} = nothing,
-    coordinate_shift = true,
-    return_SNR = false,
-    optimization = true,
+    coordinate_shift::Bool = true,
+    return_SNR::Bool = false,
+    optimization::Bool = true,
     call_number = 1,
 )
 
@@ -2512,15 +2512,15 @@ function FisherMatrix_Tdetector(model::Model,
     Lambda1=0.,
     Lambda2=0.;
     res = 1000,
-    useEarthMotion = false,
-    rho_thres=12.,
+    useEarthMotion::Bool = false,
+    rho_thres::Union{Nothing, Float64}=12.,
     alpha = 0.0,
-    fmin=2.0,
+    fmin::Float64=2.0,
     fmax::Union{Nothing, Float64} = nothing,
     REarth_km = uc.REarth_km,
-    coordinate_shift = true,
-    return_SNR = false, 
-    optimization = false, 
+    coordinate_shift::Bool = true,
+    return_SNR::Bool = false, 
+    optimization::Bool = false, 
     waveform_values = nothing,
     waveform_jacobian = nothing, 
 )
@@ -2755,15 +2755,15 @@ function FisherMatrix(model::Model,
     fmin::Union{Float64, AbstractArray}=2.0,
     fmax::Union{Nothing, Float64, AbstractArray} = nothing,
     res = 1000,
-    useEarthMotion = false,
-    rho_thres=12.,
+    useEarthMotion::Bool = false,
+    rho_thres::Union{Nothing, Float64} =12.,
     alpha = 0.0,
-    coordinate_shift = true,
-    return_SNR = false,
-    auto_save =false,
+    coordinate_shift::Bool = true,
+    return_SNR::Bool = false,
+    auto_save::Bool =false,
     name_folder = nothing,
-    save_catalog = false,
-    optimization = true,
+    save_catalog::Bool = false,
+    optimization::Bool = true,
     call_number = 1,
 )
     nEvents = length(mc)    
@@ -2978,7 +2978,7 @@ This function reads the Fisher matrices and/or the SNRs
     ```
 
 """
-function _read_Fishers_SNRs(path; SNR=true)
+function _read_Fishers_SNRs(path; SNR::Bool=true)
     if SNR == true
         Fishers, SNRs = h5open(path, "r") do file
             println("Attributes: ", keys(attributes(file)))
