@@ -46,7 +46,6 @@ function Phi(model::PhenomXAS,
     InsPhaseVersion=104,
     IntPhaseVersion=105
 )
-
     M = mc / (eta^(0.6))
     eta2 = eta * eta # These can speed up a bit, we call them multiple times
     etaInv = 1 ./ eta
@@ -562,10 +561,8 @@ function Phi(model::PhenomXAS,
     
     #phifRef = -(etaInv*_completePhase(fRef) + linb*fRef + lina) + pi/4. + pi
     phifRef = -(etaInv*_completePhase(model, fRef, Phase22, fdamp, fring) + linb*fRef + lina) + pi/4. + pi
-
     #phis    = @. etaInv*_completePhase(fgrid) + ifelse(fgrid <= fcutPar, linb*fgrid + lina + phifRef, 0.)
     phis    =  etaInv .*_completePhase(model, fgrid, Phase22, fdamp, fring) .+ ifelse.(fgrid .<= fcutPar, linb .*fgrid .+ lina .+ phifRef, 0.)
-
     return phis
 end
 

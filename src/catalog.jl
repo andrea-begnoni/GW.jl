@@ -9,6 +9,8 @@ using Integrals
 using HDF5
 using Random
 using Dates
+using DelimitedFiles
+using Interpolations
 
 export GenerateCatalog, ReadCatalog, get_dL # these are the functions that will be exported from this module
 
@@ -435,7 +437,7 @@ The code also saves the redshift in the catalog, in case you want to use it for 
 
 
 """
-function GenerateCatalog(nEvents::Int, population::String; time_delay_in_Myr = 10., seed_par = nothing, SFR = "Madau&Dickinson", name_catalog = nothing, local_rate = nothing)
+function GenerateCatalog(nEvents::Int, population::String; time_delay_in_Myr = 10., seed_par = nothing, SFR = "Madau&Dickinson", name_catalog = nothing, local_rate = nothing, EoS = "AP3", smoothing = true)
 
     if seed_par === nothing
         seed = rand(1:10000)
@@ -542,11 +544,54 @@ function GenerateCatalog(nEvents::Int, population::String; time_delay_in_Myr = 1
     #No need to consider overlaps now, all the events are independent and we only consider earth rotation around its axis (no needs to consider month and year)
 
     normalization_redshift = 0.
+    m_NS_max = 2.5
+
+
+    if population != "BBH"
+        if EoS != "AP3" && EoS != "APR4_EPP" && EoS != "ENG" && EoS != "SLy" && EoS != "WFF1" && EoS != "SQM3" && EoS != "random"
+            error("EoS not found, the ones available are AP3, APR4_EPP, ENG, SLy, WFF1, SQM3 and random (i.e., uniform distribution)")
+        end
+        if EoS == "AP3"
+            table_AP3 = readdlm("EOS_table/eos_AP3_mass.dat")
+            mass_AP3, Lambda_AP3 = table_AP3[:,1], table_AP3[:,2]
+            Lambda_interp = linear_interpolation(mass_AP3, Lambda_AP3)
+            m_NS_max = mass_AP3[end]
+        elseif EoS == "APR4_EPP"
+            table_APR4_EPP = readdlm("EOS_table/eos_APR4_EPP_mass.dat")
+            mass_APR4_EPP, Lambda_APR4_EPP = table_APR4_EPP[:,1], table_APR4_EPP[:,2]
+            Lambda_interp = linear_interpolation(mass_APR4_EPP, Lambda_APR4_EPP)
+            m_NS_max = mass_APR4_EPP[end]
+        elseif EoS == "ENG"
+            table_ENG = readdlm("EOS_table/eos_ENG_mass.dat")
+            mass_ENG, Lambda_ENG = table_ENG[:,1], table_ENG[:,2]
+            Lambda_interp = linear_interpolation(mass_ENG, Lambda_ENG)
+            m_NS_max = mass_ENG[end]
+        elseif EoS == "SLy"
+            table_SLy = readdlm("EOS_table/eos_SLy_mass.dat")
+            mass_SLy, Lambda_SLy = table_SLy[:,1], table_SLy[:,2]
+            Lambda_interp = linear_interpolation(mass_SLy, Lambda_SLy)
+            m_NS_max = mass_SLy[end]
+        elseif EoS == "WFF1"
+            table_WFF1 = readdlm("EOS_table/eos_WFF1_mass.dat")
+            mass_WFF1, Lambda_WFF1 = table_WFF1[:,1], table_WFF1[:,2]
+            Lambda_interp = linear_interpolation(mass_WFF1, Lambda_WFF1)
+            m_NS_max = mass_WFF1[end]
+        elseif EoS == "SQM3"
+            table_AP3 = readdlm("EOS_table/eos_AP3_mass.dat")
+            mass_AP3, Lambda_AP3 = table_AP3[:,1], table_AP3[:,2]
+            m_NS_max = 2.
+            mass_SQM3 = mass_AP3[mass_AP3 .<= m_NS_max]
+            Lambda_SQM3 = Lambda_AP3[mass_AP3 .<= m_NS_max]
+            Lambda_interp = linear_interpolation(mass_SQM3, Lambda_SQM3)
+        elseif EoS == "random"
+            Lambda_interp = x -> rand(Uniform(0.,2e3), length(x))
+        end        
+    end
 
     if population == "BBH"
 
-        Lambda_1 = zeros(n_samples)
-        Lambda_2 = zeros(n_samples)
+        Lambda1 = zeros(n_samples)
+        Lambda2 = zeros(n_samples)
 
         chi1 = rand(Beta(1.6, 4.12), n_samples)
         chi2 = rand(Beta(1.6, 4.12), n_samples)
@@ -656,19 +701,23 @@ function GenerateCatalog(nEvents::Int, population::String; time_delay_in_Myr = 1
 
 
     elseif population == "BNS"
-        Lambda_1 = rand(Uniform(0, 2e3), n_samples)
-        Lambda_2 = rand(Uniform(0, 2e3), n_samples)
-
         chiz1 = rand(Uniform(-0.05, 0.05), n_samples)
         chiz2 = rand(Uniform(-0.05, 0.05), n_samples)
 
-        m_1 = rand(Uniform(1, 2.15), n_samples)
-        m_2 = rand(Uniform(1, 2.15), n_samples)
-        if m_1 < m_2
-            tmp = m_1
-            m_1 = m_2
-            m_2 = tmp
+
+        m_1 = rand(Uniform(1, m_NS_max), n_samples)
+        m_2 = rand(Uniform(1, m_NS_max), n_samples)
+        for i in 1:n_samples
+            if m_1[i] < m_2[i]
+                tmp = m_1[i]
+                m_1[i] = m_2[i]
+                m_2[i] = tmp
+            end
         end
+
+        Lambda1 = Lambda_interp.(m_1)
+        Lambda2 = Lambda_interp.(m_2)
+
         normalization_redshift = quadgk(
             z -> Redshift(
                 z,
@@ -712,9 +761,6 @@ function GenerateCatalog(nEvents::Int, population::String; time_delay_in_Myr = 1
         )
 
     elseif population == "NSBH"
-        Lambda_1 = rand(Uniform(0, 2e3), n_samples)
-        Lambda_2 = zeros(n_samples)
-
         chiz1 = rand(Uniform(-0.05, 0.05), n_samples)
         chiz2 = rand(Normal(0.0, 0.15), n_samples)
 
@@ -733,6 +779,10 @@ function GenerateCatalog(nEvents::Int, population::String; time_delay_in_Myr = 1
             n_samples,
         )
         m_2 = rand(Normal(1.33, 0.09), n_samples)
+
+        Lambda1 = Lambda_interp.(m_2)
+        Lambda2 = zeros(n_samples)
+
         normalization_redshift = quadgk(
             z -> Redshift(
                 z,
@@ -810,6 +860,7 @@ function GenerateCatalog(nEvents::Int, population::String; time_delay_in_Myr = 1
         attributes(file)["total_number_sources_yr"] = Int(round(total_number_sources_yr, digits=0))
         attributes(file)["local_rate"] = local_rate
         attributes(file)["date"] = date_format
+        attributes(file)["EoS"] = EoS
 
 
         write(file, "mc", chirp_mass_detector_frame)
@@ -823,8 +874,8 @@ function GenerateCatalog(nEvents::Int, population::String; time_delay_in_Myr = 1
         write(file, "psi", psi)
         write(file, "phiCoal", phiCoal)
         write(file, "tcoal", tcoal)
-        write(file, "Lambda1", Lambda_1)
-        write(file, "Lambda2", Lambda_2)
+        write(file, "Lambda1", Lambda1)
+        write(file, "Lambda2", Lambda2)
         write(file, "z", z)
     end
 
@@ -839,8 +890,8 @@ function GenerateCatalog(nEvents::Int, population::String; time_delay_in_Myr = 1
     psi,
     tcoal,
     phiCoal,
-    Lambda_1,
-    Lambda_2
+    Lambda1,
+    Lambda2
     
 
 end
