@@ -10,6 +10,7 @@ src/detector_old.jl
 easy_GWJulia_old.ipynb
 src/detector_old.jl
 src/waveform.jl
+docs/
 
 *jpmod
 *.ipynb_checkpoints/
