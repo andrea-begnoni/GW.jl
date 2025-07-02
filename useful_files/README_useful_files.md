@@ -4,6 +4,8 @@ This folder contains useful files for the code, they are divided in:
 - Waveform files (in the folder WFfiles)
 - Power Spectral Densities (in the folder PSDs)
 
+In writing this folder we acknowledge the help of the GWFAST documentation.
+
 
 ### Waveform Files (WFfiles)
 
