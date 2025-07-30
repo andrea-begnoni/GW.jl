@@ -21,7 +21,7 @@ After the installation there is an extensive tutorial called `easy_GWJulia.ipynb
 
 Before proceding with the installation verify that you have Julia installed on your machine and we suggest to use the most recent stable version. You can find instructions on how to install Julia here: https://julialang.org/downloads/.
 
-The code is also a julia package so it is very easy to install, enter in julia
+To download the repository
 
 ```
 git clone https://github.com/andrea-begnoni/GW.jl.git

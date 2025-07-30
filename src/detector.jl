@@ -294,7 +294,7 @@ function _deltLoc(
 end
 
 """
-The function computes the pattern functions of the detector for a GW event, they are function of the detector position at the time of arrival of the GW, the sky position of the source, the polarisation of the GW.
+The function computes the pattern functions of the detector for a GW event, they are function of the detector position at the time of arrival of the GW, the sky position of the source.
 
     _patternFunction(theta, phi, tRef, DetectorCoordinates)
 
@@ -313,7 +313,7 @@ The function computes the pattern functions of the detector for a GW event, they
 
 #### Example:
 ```julia
-Fp, Fc = _patternFunction(0.1, 0.2, 0.3, 0.4, CE1Id_coordinates)
+Fp, Fc = _patternFunction(0.1, 0.2, 0.3, CE1Id_coordinates)
 ```
     
 """
