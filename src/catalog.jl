@@ -82,7 +82,7 @@ end
 """
 Helper function
 """
-function smoothing(m_prime, delta_m)
+function smoothing_function(m_prime, delta_m)
     f = exp(delta_m / m_prime + delta_m / (m_prime - delta_m))
     return f
 end
@@ -94,7 +94,7 @@ function S(m, mass_min, delta_m, smoothing)
     if m < mass_min
         S_el = 0.0
     elseif m > mass_min && m < mass_min + delta_m
-        S_el = (smoothing(m - mass_min, delta_m) + 1)^(-1)
+        S_el = (smoothing_function(m - mass_min, delta_m) + 1)^(-1)
     else
         S_el = 1.0
     end
