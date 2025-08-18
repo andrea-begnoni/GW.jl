@@ -59,3 +59,8 @@ ASDs used for the paper [*Prospects for observing and localizing gravitational-w
 Available at [https://dcc.ligo.org/LIGO-T2000012/public](https://dcc.ligo.org/LIGO-T2000012/public). 
 
 The folder contains ASDs for the Advanced LIGO, Advanced Virgo and KAGRA detectors during the O3, O4 and O5 observing runs.
+
+
+#### EOS\_table
+
+Tables of masses and tidal deformabilities for different Equation of states (EOS), used in catalog.jl. The tidal deformabilities are calculated using the LALsuite tool and we stick with its EOS name convention.

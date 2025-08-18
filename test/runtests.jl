@@ -1,4 +1,5 @@
-
+using Pkg
+Pkg.activate("../.")
 using GW
 using Test
 

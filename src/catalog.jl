@@ -94,6 +94,7 @@ function S(m, mass_min, delta_m, smoothing)
     if m < mass_min
         S_el = 0.0
     elseif m > mass_min && m < mass_min + delta_m
+        
         S_el = (smoothing(m - mass_min, delta_m) + 1)^(-1)
     else
         S_el = 1.0
@@ -411,8 +412,9 @@ Main function of this module, generates a catalog of events.
 -  `SFR` : string, Star Formation Rate, can be "Madau&Dickinson" or "Madau&Fragos".
 -  `name_catalog` : string, name of file containing the catalog.
 -  `local_rate` : float, local rate of events in Gpc^-3 yr^-1. It is only used to give an estimate of the total number of events in a year.
+-  `EoS` : string, equation of state, can be "AP3", "APR4_EPP", "ENG", "SLy", "WFF1".
 
-#### Outputs (for the format "GWJulia"):
+#### Outputs :
 -  `chirp_mass_detector_frame` : array of floats, chirp mass in the detector frame.
 -  `eta` : array of floats, symmetric mass ratio.
 -  `chi1` : array of floats, dimensionless spin of the most massive object. (chi1 = chi1z, since chi1x = chi1y = 0)
@@ -437,7 +439,7 @@ The code also saves the redshift in the catalog, in case you want to use it for 
 
 
 """
-function GenerateCatalog(nEvents::Int, population::String; time_delay_in_Myr = 10., seed_par = nothing, SFR = "Madau&Dickinson", name_catalog = nothing, local_rate = nothing, EoS = "AP3", smoothing = true)
+function GenerateCatalog(nEvents::Int, population::String; time_delay_in_Myr = 10., seed_par = nothing, SFR = "Madau&Dickinson", name_catalog = nothing, local_rate = nothing, EoS = "AP3")
 
     if seed_par === nothing
         seed = rand(1:10000)
@@ -551,33 +553,43 @@ function GenerateCatalog(nEvents::Int, population::String; time_delay_in_Myr = 1
         if EoS != "AP3" && EoS != "APR4_EPP" && EoS != "ENG" && EoS != "SLy" && EoS != "WFF1" && EoS != "SQM3" && EoS != "random"
             error("EoS not found, the ones available are AP3, APR4_EPP, ENG, SLy, WFF1, SQM3 and random (i.e., uniform distribution)")
         end
+
+        # Get the path to the directory of this file
+        PACKAGE_DIR = @__DIR__
+
+        # Go one step back in the path (from ""GW.jl/src" to "GW.jl")
+        PARENT_DIR = dirname(PACKAGE_DIR)
+
+        # Construct the path to the "useful_files" folder from the parent directory
+        EOS_DIR = joinpath(PARENT_DIR, "useful_files/EOS_table/")
+
         if EoS == "AP3"
-            table_AP3 = readdlm("EOS_table/eos_AP3_mass.dat")
+            table_AP3 = readdlm(EOS_DIR*"eos_AP3_mass.dat")
             mass_AP3, Lambda_AP3 = table_AP3[:,1], table_AP3[:,2]
             Lambda_interp = linear_interpolation(mass_AP3, Lambda_AP3)
             m_NS_max = mass_AP3[end]
         elseif EoS == "APR4_EPP"
-            table_APR4_EPP = readdlm("EOS_table/eos_APR4_EPP_mass.dat")
+            table_APR4_EPP = readdlm(EOS_DIR*"eos_APR4_EPP_mass.dat")
             mass_APR4_EPP, Lambda_APR4_EPP = table_APR4_EPP[:,1], table_APR4_EPP[:,2]
             Lambda_interp = linear_interpolation(mass_APR4_EPP, Lambda_APR4_EPP)
             m_NS_max = mass_APR4_EPP[end]
         elseif EoS == "ENG"
-            table_ENG = readdlm("EOS_table/eos_ENG_mass.dat")
+            table_ENG = readdlm(EOS_DIR*"eos_ENG_mass.dat")
             mass_ENG, Lambda_ENG = table_ENG[:,1], table_ENG[:,2]
             Lambda_interp = linear_interpolation(mass_ENG, Lambda_ENG)
             m_NS_max = mass_ENG[end]
         elseif EoS == "SLy"
-            table_SLy = readdlm("EOS_table/eos_SLy_mass.dat")
+            table_SLy = readdlm(EOS_DIR*"eos_SLy_mass.dat")
             mass_SLy, Lambda_SLy = table_SLy[:,1], table_SLy[:,2]
             Lambda_interp = linear_interpolation(mass_SLy, Lambda_SLy)
             m_NS_max = mass_SLy[end]
         elseif EoS == "WFF1"
-            table_WFF1 = readdlm("EOS_table/eos_WFF1_mass.dat")
+            table_WFF1 = readdlm(EOS_DIR*"eos_WFF1_mass.dat")
             mass_WFF1, Lambda_WFF1 = table_WFF1[:,1], table_WFF1[:,2]
             Lambda_interp = linear_interpolation(mass_WFF1, Lambda_WFF1)
             m_NS_max = mass_WFF1[end]
         elseif EoS == "SQM3"
-            table_AP3 = readdlm("EOS_table/eos_AP3_mass.dat")
+            table_AP3 = readdlm(EOS_DIR*"eos_AP3_mass.dat")
             mass_AP3, Lambda_AP3 = table_AP3[:,1], table_AP3[:,2]
             m_NS_max = 2.
             mass_SQM3 = mass_AP3[mass_AP3 .<= m_NS_max]
