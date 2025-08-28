@@ -1,7 +1,10 @@
 name = "GW"
 uuid = "12bfb5b4-b11b-482e-a53a-61106a071c3c"
-authors = ["Andrea Begnoni <andrea.begnoni42@gmail.com> and contributors"]
-version = "1.0.0-DEV"
+keywords = ["gravitational-waves", "physics", "astronomy"]
+license = "MIT"
+authors = ["Andrea Begnoni <andrea.begnoni@phd.unipdit> and joachim Pomper"]
+description = "Gravitational wave fisher forecast package"
+version = "0.1.0"
 
 [deps]
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
@@ -19,11 +22,13 @@ Polynomials = "f27b6e38-b328-58d1-80ce-0feddd5e7a45"
 ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
 QuadGK = "1fd47b50-473d-5c70-9696-f719f8f3bcdc"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+Registrator = "4418983a-e44d-11e8-3aec-9789530b3b3e"
 Roots = "f2b01f46-fcfa-551c-844a-d8ac1e96c665"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Trapz = "592b5752-818d-11e9-1e9a-2b8ca4a44cd1"
 
 [compat]
+Registrator = "1.10.0"
 julia = "1.6.7"
 
 [extras]
