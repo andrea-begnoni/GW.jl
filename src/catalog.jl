@@ -557,7 +557,7 @@ function GenerateCatalog(nEvents::Int, population::String; time_delay_in_Myr = 1
         # Get the path to the directory of this file
         PACKAGE_DIR = @__DIR__
 
-        # Go one step back in the path (from ""GW.jl/src" to "GW.jl")
+        # Go one step back in the path (from ""GWInference.jl/src" to "GWInference.jl")
         PARENT_DIR = dirname(PACKAGE_DIR)
 
         # Construct the path to the "useful_files" folder from the parent directory

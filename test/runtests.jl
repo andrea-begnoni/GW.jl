@@ -1,9 +1,9 @@
 # using Pkg
 # Pkg.activate("../.")
-using GW
+using GWInference
 using Test
 
-@testset "GW.jl" begin
+@testset "GWInference.jl" begin
     mc = 10.
     eta = 0.20
     chi1 = 0.1

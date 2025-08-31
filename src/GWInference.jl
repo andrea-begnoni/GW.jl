@@ -1,4 +1,4 @@
-module GW
+module GWInference
 
 
 # using DelimitedFiles

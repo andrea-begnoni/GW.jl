@@ -1,4 +1,4 @@
-## GWJULIA (a.k.a. GW.jl)
+## GWJULIA (a.k.a. GWInference.jl)
 
 This folder contains useful files for the code, they are divided in:
 - Waveform files (in the folder WFfiles)
