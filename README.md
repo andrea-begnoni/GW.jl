@@ -1,10 +1,10 @@
-# GW
+# GWInference
 
 [![Build Status](https://github.com/andrea-begnoni/GW.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/andrea-begnoni/GW.jl/actions/workflows/CI.yml?query=branch%3Amain)
 
 ![alt text](logo.png)
 
-### Perform accurate and fast parameter estimation of Gravitational Waves sources using the Fisher Information Matrix (alias GWJulia).
+### Perform accurate and fast parameter estimation of Gravitational Waves sources using the Fisher Information Matrix (alias GWJulia, as [link](https://arxiv.org/abs/2506.21530)).
 
 Main features:
 
