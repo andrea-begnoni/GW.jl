@@ -51,7 +51,7 @@ The `src` folder contains the 4 modules used by the code:
 
 ### Citating this work
 
-If you use this code in you work please cite:
+If you use this code in your work, please cite:
 
 ```
 @article{Begnoni:2025oyd,
@@ -67,4 +67,4 @@ If you use this code in you work please cite:
 
 ### Contacts
 
-If you need any help feel free to contact andrea.begnoni@phd.unipd.it
+If you need any help, feel free to contact andrea.begnoni@phd.unipd.it
