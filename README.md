@@ -47,3 +47,24 @@ The `src` folder contains the 4 modules used by the code:
 - `detector.jl` contains all relevant info (e.g., positions, noises, patter functions) to output the signal measured by each detector (for the waveform uses `waveforms`, see below)
 - `utils.jl` contains multi-purpose functions and the functions to analyze the Fisher Matrix
 - `waveforms` folder containing all available waveforms models, tested to be compatible with their LAL counterparts
+
+
+### Citating this work
+
+If you use this code in you work please cite:
+
+```
+@article{Begnoni:2025oyd,
+    author = "Begnoni, Andrea and Anselmi, Stefano and Pieroni, Mauro and Renzi, Alessandro and Ricciardone, Angelo",
+    title = "{Detectability and Parameter Estimation for Einstein Telescope Configurations with GWJulia}",
+    eprint = "2506.21530",
+    archivePrefix = "arXiv",
+    primaryClass = "astro-ph.CO",
+    month = "6",
+    year = "2025"
+}
+```
+
+### Contacts
+
+If you need any help feel free to contact andrea.begnoni@phd.unipd.it
