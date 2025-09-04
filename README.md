@@ -21,10 +21,31 @@ After the installation there is an extensive tutorial called `easy_GWJulia.ipynb
 
 Before proceding with the installation verify that you have Julia installed on your machine and we suggest to use the most recent stable version. You can find instructions on how to install Julia here: https://julialang.org/downloads/.
 
-To download the repository
+To install the package you have two possibilities, depending on your needs. If you do not need to add new waveforms, develop new functionalities or extend the parameter space you can download the package from the registry (equivalent as Python's pip install)
 
+### Download from the registry
+GWInference is now a Julia package on the registry, so to install it just run
+```julia
+] #package mode
+add GWInference
+```
+Then just import it when you need in your Julia script
+```julia
+using GWInference
+```
+### Git clone repository
+If you plan to modify/develop the package, it would be easier to clone this repository and then activate the package.
+
+To clone the repository
 ```
 git clone https://github.com/andrea-begnoni/GW.jl.git
+```
+Then in your Julia script write
+```julia
+using Pkg
+Pkg.activate("/path/to/the/GWInference/folder") 
+# alternatively Pkg.develop(path="/path/to/the/GWInference/folder") 
+using GWInference
 ```
 
 You are now ready to go. We suggest you to start from `easy_GWJulia.ipynb`
